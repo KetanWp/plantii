@@ -1,0 +1,31 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Scans collection:
+    // - Authenticated users can read ONLY their own scans
+    // - Zero client writes allowed (all scans are generated and saved via Cloud Functions Admin SDK)
+    match /scans/{scanId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+
+    // Feedback collection:
+    // - Client direct access blocked (Cloud Functions Admin SDK handles verified submission)
+    match /feedback/{feedbackId} {
+      allow read, write: if false;
+    }
+
+    // Daily rate limit usage tracking:
+    // - Internal server metadata, no client reads or writes
+    match /daily_usage/{usageId} {
+      allow read, write: if false;
+    }
+
+    // Default rule: reject everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

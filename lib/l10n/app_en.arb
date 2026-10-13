@@ -249,5 +249,73 @@
   "voiceNotInstalledDismiss": "Got it",
   "@voiceNotInstalledDismiss": {
     "description": "Dismiss button for voice install dialog"
+  },
+  "greetingFarmer": "Welcome, Farmer",
+  "@greetingFarmer": {
+    "description": "Warm greeting on home screen header"
+  },
+  "homeSubtitle": "Check your crop health instantly",
+  "@homeSubtitle": {
+    "description": "Subtitle below home greeting"
+  },
+  "weatherChipSunny": "28°C • Clear & Sunny",
+  "@weatherChipSunny": {
+    "description": "Weather status chip text"
+  },
+  "weatherChipAdvisory": "Good weather for field inspection & spraying",
+  "@weatherChipAdvisory": {
+    "description": "Weather advisory message on tap"
+  },
+  "tapToScanLeaf": "Tap to Scan",
+  "@tapToScanLeaf": {
+    "description": "Label on circular scan button"
+  },
+  "quickActionsTitle": "Quick Actions",
+  "@quickActionsTitle": {
+    "description": "Section header for quick actions on home screen"
+  },
+  "actionGalleryTitle": "Upload from Gallery",
+  "@actionGalleryTitle": {
+    "description": "Title of quick action card for gallery"
+  },
+  "actionGallerySubtitle": "Diagnose saved crop photo",
+  "@actionGallerySubtitle": {
+    "description": "Subtitle of quick action card for gallery"
+  },
+  "actionHistoryTitle": "Recent Scans",
+  "@actionHistoryTitle": {
+    "description": "Title of quick action card for scan history"
+  },
+  "actionHistorySubtitle": "Review past diagnoses & treatments",
+  "@actionHistorySubtitle": {
+    "description": "Subtitle of quick action card for scan history"
+  },
+  "actionExpertTitle": "Kisan Helpline",
+  "@actionExpertTitle": {
+    "description": "Title of quick action card for expert helpline"
+  },
+  "actionExpertSubtitle": "Toll-free agricultural expert consultation",
+  "@actionExpertSubtitle": {
+    "description": "Subtitle of quick action card for expert helpline"
+  },
+  "profileNav": "Profile",
+  "@profileNav": {
+    "description": "Bottom navigation label for profile"
+  },
+  "profileTitle": "Farmer Profile",
+  "@profileTitle": {
+    "description": "Title for profile modal"
+  },
+  "profileLanguage": "App Language",
+  "@profileLanguage": {
+    "description": "Language label in profile"
+  },
+  "profileHelpline": "Farmer Helpline: 1800-180-1551",
+  "@profileHelpline": {
+    "description": "Helpline info in profile"
+  },
+  "profileVersion": "Crop Doctor v1.0.0",
+  "@profileVersion": {
+    "description": "Version info in profile"
   }
 }

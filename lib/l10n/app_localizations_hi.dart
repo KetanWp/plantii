@@ -197,4 +197,56 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get voiceNotInstalledDismiss => 'समझ गया';
+
+  @override
+  String get greetingFarmer => 'स्वागत है, किसान मित्र';
+
+  @override
+  String get homeSubtitle => 'अपने पौधों के स्वास्थ्य की तुरंत जांच करें';
+
+  @override
+  String get weatherChipSunny => '28°C • धूप व साफ मौसम';
+
+  @override
+  String get weatherChipAdvisory =>
+      'खेत निरीक्षण और छिड़काव के लिए अनुकूल मौसम';
+
+  @override
+  String get tapToScanLeaf => 'पत्ती स्कैन करें';
+
+  @override
+  String get quickActionsTitle => 'त्वरित सेवाएं';
+
+  @override
+  String get actionGalleryTitle => 'गैलरी से फोटो लें';
+
+  @override
+  String get actionGallerySubtitle => 'सहेजी गई फसल की फोटो जांचें';
+
+  @override
+  String get actionHistoryTitle => 'पुराने स्कैन देखें';
+
+  @override
+  String get actionHistorySubtitle => 'पुराने उपचार व परिणाम देखें';
+
+  @override
+  String get actionExpertTitle => 'किसान हेल्पलाइन';
+
+  @override
+  String get actionExpertSubtitle => 'कृषि वैज्ञानिकों से निःशुल्क सलाह';
+
+  @override
+  String get profileNav => 'प्रोफ़ाइल';
+
+  @override
+  String get profileTitle => 'किसान प्रोफ़ाइल';
+
+  @override
+  String get profileLanguage => 'ऐप की भाषा';
+
+  @override
+  String get profileHelpline => 'किसान हेल्पलाइन: 1800-180-1551';
+
+  @override
+  String get profileVersion => 'क्रॉप डॉक्टर v1.0.0';
 }

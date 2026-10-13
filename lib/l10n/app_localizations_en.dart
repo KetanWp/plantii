@@ -196,4 +196,57 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get voiceNotInstalledDismiss => 'Got it';
+
+  @override
+  String get greetingFarmer => 'Welcome, Farmer';
+
+  @override
+  String get homeSubtitle => 'Check your crop health instantly';
+
+  @override
+  String get weatherChipSunny => '28°C • Clear & Sunny';
+
+  @override
+  String get weatherChipAdvisory =>
+      'Good weather for field inspection & spraying';
+
+  @override
+  String get tapToScanLeaf => 'Tap to Scan';
+
+  @override
+  String get quickActionsTitle => 'Quick Actions';
+
+  @override
+  String get actionGalleryTitle => 'Upload from Gallery';
+
+  @override
+  String get actionGallerySubtitle => 'Diagnose saved crop photo';
+
+  @override
+  String get actionHistoryTitle => 'Recent Scans';
+
+  @override
+  String get actionHistorySubtitle => 'Review past diagnoses & treatments';
+
+  @override
+  String get actionExpertTitle => 'Kisan Helpline';
+
+  @override
+  String get actionExpertSubtitle =>
+      'Toll-free agricultural expert consultation';
+
+  @override
+  String get profileNav => 'Profile';
+
+  @override
+  String get profileTitle => 'Farmer Profile';
+
+  @override
+  String get profileLanguage => 'App Language';
+
+  @override
+  String get profileHelpline => 'Farmer Helpline: 1800-180-1551';
+
+  @override
+  String get profileVersion => 'Crop Doctor v1.0.0';
 }

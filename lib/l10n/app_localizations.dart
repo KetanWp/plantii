@@ -457,6 +457,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Got it'**
   String get voiceNotInstalledDismiss;
+
+  /// Warm greeting on home screen header
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome, Farmer'**
+  String get greetingFarmer;
+
+  /// Subtitle below home greeting
+  ///
+  /// In en, this message translates to:
+  /// **'Check your crop health instantly'**
+  String get homeSubtitle;
+
+  /// Weather status chip text
+  ///
+  /// In en, this message translates to:
+  /// **'28°C • Clear & Sunny'**
+  String get weatherChipSunny;
+
+  /// Weather advisory message on tap
+  ///
+  /// In en, this message translates to:
+  /// **'Good weather for field inspection & spraying'**
+  String get weatherChipAdvisory;
+
+  /// Label on circular scan button
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to Scan'**
+  String get tapToScanLeaf;
+
+  /// Section header for quick actions on home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Actions'**
+  String get quickActionsTitle;
+
+  /// Title of quick action card for gallery
+  ///
+  /// In en, this message translates to:
+  /// **'Upload from Gallery'**
+  String get actionGalleryTitle;
+
+  /// Subtitle of quick action card for gallery
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnose saved crop photo'**
+  String get actionGallerySubtitle;
+
+  /// Title of quick action card for scan history
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Scans'**
+  String get actionHistoryTitle;
+
+  /// Subtitle of quick action card for scan history
+  ///
+  /// In en, this message translates to:
+  /// **'Review past diagnoses & treatments'**
+  String get actionHistorySubtitle;
+
+  /// Title of quick action card for expert helpline
+  ///
+  /// In en, this message translates to:
+  /// **'Kisan Helpline'**
+  String get actionExpertTitle;
+
+  /// Subtitle of quick action card for expert helpline
+  ///
+  /// In en, this message translates to:
+  /// **'Toll-free agricultural expert consultation'**
+  String get actionExpertSubtitle;
+
+  /// Bottom navigation label for profile
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profileNav;
+
+  /// Title for profile modal
+  ///
+  /// In en, this message translates to:
+  /// **'Farmer Profile'**
+  String get profileTitle;
+
+  /// Language label in profile
+  ///
+  /// In en, this message translates to:
+  /// **'App Language'**
+  String get profileLanguage;
+
+  /// Helpline info in profile
+  ///
+  /// In en, this message translates to:
+  /// **'Farmer Helpline: 1800-180-1551'**
+  String get profileHelpline;
+
+  /// Version info in profile
+  ///
+  /// In en, this message translates to:
+  /// **'Crop Doctor v1.0.0'**
+  String get profileVersion;
 }
 
 class _AppLocalizationsDelegate

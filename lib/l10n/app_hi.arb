@@ -59,5 +59,22 @@
   "readingAloud": "रोग की जानकारी सुनाई जा रही है...",
   "voiceNotInstalledTitle": "हिंदी आवाज उपलब्ध नहीं है",
   "voiceNotInstalledDesc": "आपके फोन में हिंदी में बोलने वाली आवाज (Text-to-Speech) इंस्टॉल नहीं है। इसे चालू करने के लिए निम्न कदम उठाएं:\n\n1. अपने फोन की 'सेटिंग्स' (Settings) खोलें।\n2. 'पहुंच' (Accessibility) या 'सिस्टम' में 'टेक्स्ट-टू-स्पीच' (Text-to-speech) चुनें।\n3. 'पसंदीदा इंजन' (Preferred engine) में Google Speech Services चुनें।\n4. सेटिंग्स आइकन (⚙️) दबाकर 'आवाज डेटा इंस्टॉल करें' में जाएं और 'हिंदी' डाउनलोड करें।",
-  "voiceNotInstalledDismiss": "समझ गया"
+  "voiceNotInstalledDismiss": "समझ गया",
+  "greetingFarmer": "स्वागत है, किसान मित्र",
+  "homeSubtitle": "अपने पौधों के स्वास्थ्य की तुरंत जांच करें",
+  "weatherChipSunny": "28°C • धूप व साफ मौसम",
+  "weatherChipAdvisory": "खेत निरीक्षण और छिड़काव के लिए अनुकूल मौसम",
+  "tapToScanLeaf": "पत्ती स्कैन करें",
+  "quickActionsTitle": "त्वरित सेवाएं",
+  "actionGalleryTitle": "गैलरी से फोटो लें",
+  "actionGallerySubtitle": "सहेजी गई फसल की फोटो जांचें",
+  "actionHistoryTitle": "पुराने स्कैन देखें",
+  "actionHistorySubtitle": "पुराने उपचार व परिणाम देखें",
+  "actionExpertTitle": "किसान हेल्पलाइन",
+  "actionExpertSubtitle": "कृषि वैज्ञानिकों से निःशुल्क सलाह",
+  "profileNav": "प्रोफ़ाइल",
+  "profileTitle": "किसान प्रोफ़ाइल",
+  "profileLanguage": "ऐप की भाषा",
+  "profileHelpline": "किसान हेल्पलाइन: 1800-180-1551",
+  "profileVersion": "क्रॉप डॉक्टर v1.0.0"
 }
