@@ -101,7 +101,7 @@ abstract class AppLocalizations {
   /// The title of the application
   ///
   /// In en, this message translates to:
-  /// **'Crop Doctor'**
+  /// **'Plantii'**
   String get appTitle;
 
   /// Title for language selection screen
@@ -557,7 +557,7 @@ abstract class AppLocalizations {
   /// Version info in profile
   ///
   /// In en, this message translates to:
-  /// **'Crop Doctor v1.0.0'**
+  /// **'Plantii v1.0.0'**
   String get profileVersion;
 }
 

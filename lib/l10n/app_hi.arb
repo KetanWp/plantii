@@ -1,6 +1,6 @@
 {
   "@@locale": "hi",
-  "appTitle": "क्रॉप डॉक्टर",
+  "appTitle": "Plantii (प्लांटी)",
   "languageTitle": "भाषा चुनें",
   "homeTitle": "होम",
   "cropSelectionTitle": "फसल चुनें",
@@ -76,5 +76,5 @@
   "profileTitle": "किसान प्रोफ़ाइल",
   "profileLanguage": "ऐप की भाषा",
   "profileHelpline": "किसान हेल्पलाइन: 1800-180-1551",
-  "profileVersion": "क्रॉप डॉक्टर v1.0.0"
+  "profileVersion": "Plantii v1.0.0"
 }

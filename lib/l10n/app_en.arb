@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "appTitle": "Crop Doctor",
+  "appTitle": "Plantii",
   "@appTitle": {
     "description": "The title of the application"
   },
@@ -314,7 +314,7 @@
   "@profileHelpline": {
     "description": "Helpline info in profile"
   },
-  "profileVersion": "Crop Doctor v1.0.0",
+  "profileVersion": "Plantii v1.0.0",
   "@profileVersion": {
     "description": "Version info in profile"
   }

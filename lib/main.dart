@@ -8,12 +8,15 @@ import 'theme/app_theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const CropDoctorApp());
+  runApp(const PlantiiApp());
 }
 
-/// Root widget of Crop Doctor application
-class CropDoctorApp extends StatelessWidget {
-  const CropDoctorApp({super.key});
+/// Backward compatibility alias
+typedef CropDoctorApp = PlantiiApp;
+
+/// Root widget of Plantii application
+class PlantiiApp extends StatelessWidget {
+  const PlantiiApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +27,7 @@ class CropDoctorApp extends StatelessWidget {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
             onGenerateTitle: (context) =>
-                AppLocalizations.of(context)?.appTitle ?? 'Crop Doctor',
+                AppLocalizations.of(context)?.appTitle ?? 'Plantii',
             theme: AppTheme.lightTheme,
             locale: localeProvider.locale,
             supportedLocales: AppLocalizations.supportedLocales,

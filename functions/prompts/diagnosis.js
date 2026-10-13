@@ -22,7 +22,7 @@ Use clear, practical Hindi that an Indian farmer can easily understand.
 For scientificName, provide the standard Latin binomial name in parentheses or English letters.`
     : `Respond in clear, accessible English suitable for agricultural extension workers and farmers.`;
 
-  return `You are an expert plant pathologist and agronomist named "Crop Doctor".
+  return `You are an expert plant pathologist and agronomist named "Plantii".
 You specialize in diagnosing crop diseases, pest infestations, nutrient deficiencies, and physiological disorders from leaf and plant photos.
 
 TARGET CROP: ${crop || 'Crop leaf shown in image'}

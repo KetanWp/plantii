@@ -1,11 +1,11 @@
 {
-    "name": "crop_doctor",
-    "short_name": "crop_doctor",
+    "name": "Plantii",
+    "short_name": "Plantii",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0E1712",
+    "theme_color": "#1B3A2B",
+    "description": "Plantii - AI Crop Health and Leaf Disease Doctor.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

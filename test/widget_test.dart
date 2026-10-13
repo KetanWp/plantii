@@ -5,20 +5,20 @@ import 'package:image/image.dart' as img;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:crop_doctor/l10n/app_localizations.dart';
-import 'package:crop_doctor/models/crop_item.dart';
-import 'package:crop_doctor/models/diagnosis.dart';
-import 'package:crop_doctor/models/scan_record.dart';
-import 'package:crop_doctor/routes.dart';
-import 'package:crop_doctor/screens/crop_selection_screen.dart';
-import 'package:crop_doctor/screens/history_screen.dart';
-import 'package:crop_doctor/screens/result_screen.dart';
-import 'package:crop_doctor/services/image_processing_service.dart';
-import 'package:crop_doctor/services/locale_provider.dart';
-import 'package:crop_doctor/services/mock_diagnosis_service.dart';
-import 'package:crop_doctor/services/scan_history_service.dart';
-import 'package:crop_doctor/services/tts_service.dart';
-import 'package:crop_doctor/theme/app_theme.dart';
+import 'package:plantii/l10n/app_localizations.dart';
+import 'package:plantii/models/crop_item.dart';
+import 'package:plantii/models/diagnosis.dart';
+import 'package:plantii/models/scan_record.dart';
+import 'package:plantii/routes.dart';
+import 'package:plantii/screens/crop_selection_screen.dart';
+import 'package:plantii/screens/history_screen.dart';
+import 'package:plantii/screens/result_screen.dart';
+import 'package:plantii/services/image_processing_service.dart';
+import 'package:plantii/services/locale_provider.dart';
+import 'package:plantii/services/mock_diagnosis_service.dart';
+import 'package:plantii/services/scan_history_service.dart';
+import 'package:plantii/services/tts_service.dart';
+import 'package:plantii/theme/app_theme.dart';
 import 'package:flutter/services.dart';
 
 void main() {

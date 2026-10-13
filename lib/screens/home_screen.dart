@@ -258,19 +258,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           // Brand Pill
                           Row(
                             children: [
-                              Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.leafGreenAccent.withValues(alpha: 0.2),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.eco_rounded,
-                                  color: AppTheme.leafGreenAccent,
-                                  size: 22,
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.asset(
+                                  'assets/images/logo.png',
+                                  width: 32,
+                                  height: 32,
+                                  fit: BoxFit.cover,
                                 ),
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 10),
                               Text(
                                 l10n.appTitle,
                                 style: const TextStyle(

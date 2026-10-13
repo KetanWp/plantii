@@ -10,7 +10,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'Crop Doctor';
+  String get appTitle => 'Plantii';
 
   @override
   String get languageTitle => 'Select Language';
@@ -248,5 +248,5 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileHelpline => 'Farmer Helpline: 1800-180-1551';
 
   @override
-  String get profileVersion => 'Crop Doctor v1.0.0';
+  String get profileVersion => 'Plantii v1.0.0';
 }

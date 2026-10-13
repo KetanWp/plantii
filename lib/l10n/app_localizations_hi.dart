@@ -10,7 +10,7 @@ class AppLocalizationsHi extends AppLocalizations {
   AppLocalizationsHi([String locale = 'hi']) : super(locale);
 
   @override
-  String get appTitle => 'क्रॉप डॉक्टर';
+  String get appTitle => 'Plantii (प्लांटी)';
 
   @override
   String get languageTitle => 'भाषा चुनें';
@@ -248,5 +248,5 @@ class AppLocalizationsHi extends AppLocalizations {
   String get profileHelpline => 'किसान हेल्पलाइन: 1800-180-1551';
 
   @override
-  String get profileVersion => 'क्रॉप डॉक्टर v1.0.0';
+  String get profileVersion => 'Plantii v1.0.0';
 }

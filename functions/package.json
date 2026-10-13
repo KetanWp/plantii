@@ -1,6 +1,6 @@
 {
-  "name": "crop-doctor-backend",
-  "description": "Firebase Cloud Functions (2nd gen) backend for Crop Doctor",
+  "name": "plantii-backend",
+  "description": "Firebase Cloud Functions (2nd gen) backend for Plantii",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {

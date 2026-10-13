@@ -57,7 +57,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'healthy',
-    service: 'Crop Doctor Backend (2nd gen)',
+    service: 'Plantii Backend (2nd gen)',
     timestamp: new Date().toISOString(),
   });
 });
