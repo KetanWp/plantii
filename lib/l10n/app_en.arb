@@ -1,0 +1,253 @@
+{
+  "@@locale": "en",
+  "appTitle": "Crop Doctor",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  "languageTitle": "Select Language",
+  "@languageTitle": {
+    "description": "Title for language selection screen"
+  },
+  "homeTitle": "Home",
+  "@homeTitle": {
+    "description": "Title for home screen"
+  },
+  "cropSelectionTitle": "Select Crop",
+  "@cropSelectionTitle": {
+    "description": "Title for crop selection screen"
+  },
+  "selectCropPrompt": "Which crop do you want to check?",
+  "@selectCropPrompt": {
+    "description": "Instruction subtitle for crop selection"
+  },
+  "cameraTitle": "Scan Leaf",
+  "@cameraTitle": {
+    "description": "Title for camera screen"
+  },
+  "loadingTitle": "Diagnosing Plant",
+  "@loadingTitle": {
+    "description": "Title for loading screen"
+  },
+  "resultTitle": "Diagnosis Result",
+  "@resultTitle": {
+    "description": "Title for result screen"
+  },
+  "historyTitle": "Scan History",
+  "@historyTitle": {
+    "description": "Title for history screen"
+  },
+  "scanPlantButton": "Scan Your Plant",
+  "@scanPlantButton": {
+    "description": "Main scan button text"
+  },
+  "chooseFromGallery": "Choose from Gallery",
+  "@chooseFromGallery": {
+    "description": "Button to pick image from gallery"
+  },
+  "historyNav": "History",
+  "@historyNav": {
+    "description": "Navigation label for history"
+  },
+  "weatherNav": "Weather",
+  "@weatherNav": {
+    "description": "Navigation label for weather"
+  },
+  "helpNav": "Help",
+  "@helpNav": {
+    "description": "Navigation label for help"
+  },
+  "checkingPlant": "Checking your plant...",
+  "@checkingPlant": {
+    "description": "Friendly loading text"
+  },
+  "tomato": "Tomato",
+  "@tomato": {
+    "description": "Tomato crop"
+  },
+  "potato": "Potato",
+  "@potato": {
+    "description": "Potato crop"
+  },
+  "rice": "Rice",
+  "@rice": {
+    "description": "Rice crop"
+  },
+  "wheat": "Wheat",
+  "@wheat": {
+    "description": "Wheat crop"
+  },
+  "maize": "Maize",
+  "@maize": {
+    "description": "Maize crop"
+  },
+  "cameraTipMoveCloser": "Move closer & avoid shadows",
+  "@cameraTipMoveCloser": {
+    "description": "Tip on camera screen"
+  },
+  "cameraTipFrameLeaf": "Fit the diseased leaf inside the frame",
+  "@cameraTipFrameLeaf": {
+    "description": "Second camera tip"
+  },
+  "takePhoto": "Take Photo",
+  "@takePhoto": {
+    "description": "Take photo button"
+  },
+  "photoNotClear": "Photo is not clear, please try again",
+  "@photoNotClear": {
+    "description": "Error when photo is too small or unclear"
+  },
+  "cameraPermissionDenied": "Camera access is needed to scan crops",
+  "@cameraPermissionDenied": {
+    "description": "Title when camera permission is denied"
+  },
+  "cameraPermissionDeniedHelp": "Please allow camera access in settings, or pick a photo from your gallery.",
+  "@cameraPermissionDeniedHelp": {
+    "description": "Help message when camera access is denied"
+  },
+  "openGallery": "Open Gallery",
+  "@openGallery": {
+    "description": "Gallery button"
+  },
+  "retry": "Try Again",
+  "@retry": {
+    "description": "Retry button"
+  },
+  "selectedCrop": "Crop: {crop}",
+  "@selectedCrop": {
+    "description": "Shows which crop is currently being scanned",
+    "placeholders": {
+      "crop": {
+        "type": "String"
+      }
+    }
+  },
+  "processingImage": "Optimizing image...",
+  "@processingImage": {
+    "description": "Notice shown while validating and compressing photo"
+  },
+  "analyzingLeafAi": "AI is analyzing leaf patterns & symptoms...",
+  "@analyzingLeafAi": {
+    "description": "Detailed text during 2 second AI diagnosis loading"
+  },
+  "whatItIs": "What it is",
+  "@whatItIs": {
+    "description": "Diagnosis description section header"
+  },
+  "whatToDoNow": "What to do now",
+  "@whatToDoNow": {
+    "description": "Immediate actions section header"
+  },
+  "organicTreatment": "Organic Treatment",
+  "@organicTreatment": {
+    "description": "Organic treatment section title"
+  },
+  "chemicalTreatment": "Chemical Treatment",
+  "@chemicalTreatment": {
+    "description": "Chemical treatment section title"
+  },
+  "safetyNote": "Safety Note",
+  "@safetyNote": {
+    "description": "Safety warning note title"
+  },
+  "preventionTips": "Prevention",
+  "@preventionTips": {
+    "description": "Prevention tips section header"
+  },
+  "askAnExpert": "Ask an Expert",
+  "@askAnExpert": {
+    "description": "Button to connect with an expert"
+  },
+  "listen": "Listen",
+  "@listen": {
+    "description": "Audio read-out button"
+  },
+  "wasThisHelpful": "Was this helpful?",
+  "@wasThisHelpful": {
+    "description": "Feedback question"
+  },
+  "feedbackThanks": "Thank you for your feedback!",
+  "@feedbackThanks": {
+    "description": "Acknowledgment after thumbs up/down"
+  },
+  "severityMild": "Mild",
+  "@severityMild": {
+    "description": "Mild disease severity label"
+  },
+  "severityModerate": "Moderate",
+  "@severityModerate": {
+    "description": "Moderate disease severity label"
+  },
+  "severitySevere": "Severe",
+  "@severitySevere": {
+    "description": "Severe disease severity label"
+  },
+  "expertModalTitle": "Kisan Call Center",
+  "@expertModalTitle": {
+    "description": "Expert dialog title"
+  },
+  "expertModalDesc": "Toll-free agricultural helpline for farmers:\n📞 1800-180-1551 (Available 6 AM - 10 PM)",
+  "@expertModalDesc": {
+    "description": "Expert dialog message"
+  },
+  "close": "Close",
+  "@close": {
+    "description": "Close button text"
+  },
+  "noScansYet": "No past scans yet",
+  "@noScansYet": {
+    "description": "Empty state title for history screen"
+  },
+  "noScansYetPrompt": "You have not scanned any plants yet. Take a photo of a diseased leaf to diagnose it.",
+  "@noScansYetPrompt": {
+    "description": "Empty state subtitle for history screen"
+  },
+  "startFirstScan": "Scan Your First Plant",
+  "@startFirstScan": {
+    "description": "Action button in empty state"
+  },
+  "deleteRecord": "Delete",
+  "@deleteRecord": {
+    "description": "Delete history item"
+  },
+  "scannedOn": "Scanned: {date}",
+  "@scannedOn": {
+    "description": "Date label for history item",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "diseaseNameLabel": "Disease name",
+  "@diseaseNameLabel": {
+    "description": "Label for disease name in audio readout"
+  },
+  "severityLabel": "Severity",
+  "@severityLabel": {
+    "description": "Label for disease severity in audio readout"
+  },
+  "treatmentLabel": "Treatment",
+  "@treatmentLabel": {
+    "description": "Label for treatment in audio readout"
+  },
+  "stopAudio": "Stop",
+  "@stopAudio": {
+    "description": "Button to stop audio readout"
+  },
+  "readingAloud": "Reading diagnosis aloud...",
+  "@readingAloud": {
+    "description": "Status text while TTS is speaking"
+  },
+  "voiceNotInstalledTitle": "Hindi Voice Not Installed",
+  "@voiceNotInstalledTitle": {
+    "description": "Title when Hindi TTS voice is missing"
+  },
+  "voiceNotInstalledDesc": "Your phone does not have the Hindi voice pack installed for speech. Follow these steps to install it:\n\n1. Open your phone Settings.\n2. Tap 'Accessibility' or 'System' > 'Text-to-speech output'.\n3. Select 'Speech Services by Google' as the Preferred engine.\n4. Tap the Settings icon (⚙️) next to it, tap 'Install voice data', and download 'Hindi'.",
+  "@voiceNotInstalledDesc": {
+    "description": "Step by step instructions to install Hindi TTS"
+  },
+  "voiceNotInstalledDismiss": "Got it",
+  "@voiceNotInstalledDismiss": {
+    "description": "Dismiss button for voice install dialog"
+  }
+}
