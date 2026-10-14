@@ -92,8 +92,86 @@ async function saveFeedbackRecord({ scanId, userId, helpful, comment = '' }) {
   return feedbackDocRef.id;
 }
 
+/**
+ * Records user privacy consent version and timestamp in users/{userId}
+ *
+ * @param {Object} params
+ * @param {string} params.userId
+ * @param {string} params.consentVersion
+ * @returns {Promise<void>}
+ */
+async function recordUserConsent({ userId, consentVersion = '1.0' }) {
+  const userRef = admin.firestore().collection('users').doc(userId);
+  await userRef.set(
+    {
+      consentVersion: String(consentVersion),
+      consentedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+  safeLogger.info(`Successfully recorded consent v${consentVersion} for user: ${userId}`);
+}
+
+/**
+ * Deletes all Firestore data associated with a user:
+ * - scans collection where userId == userId
+ * - feedback collection where userId == userId
+ * - users/{userId} document
+ *
+ * @param {string} userId
+ * @returns {Promise<{ deletedScans: number, deletedFeedback: number, userDocDeleted: boolean }>}
+ */
+async function deleteUserData(userId) {
+  const db = admin.firestore();
+
+  // 1. Delete all user scans in batches
+  const scansSnapshot = await db.collection('scans').where('userId', '==', userId).get();
+  let deletedScans = 0;
+  if (!scansSnapshot.empty) {
+    const batch = db.batch();
+    scansSnapshot.forEach((doc) => {
+      batch.delete(doc.ref);
+      deletedScans++;
+    });
+    await batch.commit();
+  }
+
+  // 2. Delete all user feedback in batches
+  const feedbackSnapshot = await db.collection('feedback').where('userId', '==', userId).get();
+  let deletedFeedback = 0;
+  if (!feedbackSnapshot.empty) {
+    const batch = db.batch();
+    feedbackSnapshot.forEach((doc) => {
+      batch.delete(doc.ref);
+      deletedFeedback++;
+    });
+    await batch.commit();
+  }
+
+  // 3. Delete user document in users/{userId}
+  const userDocRef = db.collection('users').doc(userId);
+  const userDoc = await userDocRef.get();
+  const userDocDeleted = userDoc.exists;
+  if (userDocDeleted) {
+    await userDocRef.delete();
+  }
+
+  safeLogger.info(
+    `Deleted data for user ${userId}: ${deletedScans} scans, ${deletedFeedback} feedback, userDoc: ${userDocDeleted}`
+  );
+
+  return {
+    deletedScans,
+    deletedFeedback,
+    userDocDeleted,
+  };
+}
+
 module.exports = {
   saveScanRecord,
   getScanById,
   saveFeedbackRecord,
+  recordUserConsent,
+  deleteUserData,
 };

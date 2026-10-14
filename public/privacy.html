@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plantii - Privacy Policy | गोपनीयता नीति</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <style>
+    :root {
+      --primary: #1E4620;
+      --primary-light: #E8F5E9;
+      --primary-dark: #0F2E14;
+      --accent: #D78A22;
+      --bg: #F9F8F3;
+      --card-bg: #FFFFFF;
+      --text-dark: #1E231E;
+      --text-muted: #5A655A;
+      --border: #DDE5DC;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-dark);
+      line-height: 1.65;
+      padding: 0;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+      color: white;
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .brand {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 0.3rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .tagline {
+      font-size: 1.05rem;
+      color: #E0EADE;
+      font-weight: 400;
+      max-width: 600px;
+      margin: 0 auto 1.5rem;
+    }
+
+    .meta-pills {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      font-size: 0.88rem;
+    }
+
+    .pill {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      padding: 0.35rem 0.9rem;
+      border-radius: 999px;
+      color: #FFFFFF;
+      font-weight: 500;
+    }
+
+    .nav-toggle-bar {
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: center;
+      padding: 0.75rem 1rem;
+      gap: 1rem;
+    }
+
+    .lang-btn {
+      background: #F0F4F0;
+      color: var(--text-dark);
+      border: 1.5px solid var(--border);
+      padding: 0.5rem 1.4rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .lang-btn:hover {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .lang-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 2rem auto;
+      padding: 0 1.25rem 4rem;
+    }
+
+    .summary-card {
+      background: var(--primary-light);
+      border-left: 5px solid var(--primary);
+      padding: 1.25rem 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: var(--primary-dark);
+    }
+
+    .policy-section {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    }
+
+    .policy-section h2 {
+      color: var(--primary);
+      font-size: 1.35rem;
+      margin-bottom: 0.75rem;
+      border-bottom: 1px solid #EEF2EE;
+      padding-bottom: 0.5rem;
+    }
+
+    .policy-section p, .policy-section li {
+      color: var(--text-dark);
+      font-size: 0.98rem;
+      line-height: 1.7;
+    }
+
+    .policy-section ul {
+      margin-left: 1.25rem;
+      margin-top: 0.5rem;
+    }
+
+    .policy-section li {
+      margin-bottom: 0.4rem;
+    }
+
+    .highlight-box {
+      background: #FFF9E6;
+      border: 1px solid #FFE082;
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+      margin: 1rem 0;
+      font-size: 0.95rem;
+      color: #7A5300;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      text-align: center;
+      padding: 2.5rem 1rem;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      background: #FFFFFF;
+    }
+
+    footer a {
+      color: var(--primary);
+      text-decoration: underline;
+    }
+
+    @media (max-width: 600px) {
+      header {
+        padding: 2rem 1rem;
+      }
+      .brand {
+        font-size: 1.75rem;
+      }
+      .container {
+        margin: 1.25rem auto;
+      }
+      .policy-section {
+        padding: 1.25rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">🌱 Plantii</div>
+    <div class="tagline">AI-Powered Crop Health & Leaf Disease Diagnosis</div>
+    <div class="meta-pills">
+      <span class="pill">Effective: 14-10-2026</span>
+      <span class="pill">Version 1.0</span>
+      <span class="pill">Prakuty Tech, India</span>
+    </div>
+  </header>
+
+  <div class="nav-toggle-bar">
+    <a href="#english" class="lang-btn active" id="btn-en" onclick="showLang('en'); return false;">English Policy</a>
+    <a href="#hindi" class="lang-btn" id="btn-hi" onclick="showLang('hi'); return false;">हिन्दी नीति (Hindi)</a>
+  </div>
+
+  <main class="container">
+
+    <!-- ==================== ENGLISH SECTION ==================== -->
+    <div id="section-en">
+      <div class="summary-card">
+        <strong>Privacy Summary:</strong> Plantii respects your privacy. We do not require accounts with personal credentials, do not sell data, do not display ads, and never store leaf photos on our backend servers. Text-to-speech runs entirely on your phone.
+      </div>
+
+      <article class="policy-section">
+        <h2>1. Who We Are</h2>
+        <p>Plantii is an agricultural technology application created and operated by <strong>Prakuty Tech</strong>, based in <strong>Chhattisgarh, India</strong>. Our mission is to provide farmers with fast, reliable, and accessible crop health diagnostics and leaf disease treatment advice. For questions or grievance redressal, contact us at <a href="mailto:info@prakruty.com">info@prakruty.com</a>.</p>
+      </article>
+
+      <article class="policy-section">
+        <h2>2. What We Collect</h2>
+        <p>We practice strict data minimization and collect only the data necessary to provide crop diagnostics:</p>
+        <ul>
+          <li><strong>Anonymous User ID:</strong> Firebase Anonymous Authentication assigns a random, pseudonymous identifier (UID). We do NOT collect your name, phone number, email address, or government identity.</li>
+          <li><strong>Plant Leaf Photos:</strong> When you snap or select a leaf photo, it is sent securely to our backend and Google's Gemini Vision AI service for diagnostic analysis. Our backend servers <strong>do NOT store your photos</strong>.</li>
+          <li><strong>Local Storage:</strong> A copy of your leaf photo is saved locally in your phone's storage so you can review your past scans in the History tab offline.</li>
+          <li><strong>Diagnosis & Scan Records:</strong> We store your anonymous user ID, crop type, selected language, disease name, diagnosis text, severity rating, confidence level, treatments, and timestamp in Cloud Firestore.</li>
+          <li><strong>Feedback:</strong> If you submit helpfulness ratings (thumbs up/down) or optional comments, they are stored with the scan ID.</li>
+          <li><strong>Abuse Prevention & Limits:</strong> To prevent denial-of-service and fair usage, our backend records a one-way SHA-256 hashed (not raw) IP address and daily scan counts. We NEVER store raw IP addresses in Firestore.</li>
+          <li><strong>Device Integrity:</strong> Firebase App Check and Google Play Integrity verify genuine requests from certified Android devices.</li>
+          <li><strong>Device Permissions:</strong> Camera permission is used solely to capture plant photos. Gallery permission is used solely to choose a plant photo you select.</li>
+          <li><strong>Text-to-Speech:</strong> The read-aloud voice feature runs entirely on your device using the on-device text-to-speech engine. No audio is recorded or transmitted to any server.</li>
+        </ul>
+      </article>
+
+      <article class="policy-section">
+        <h2>3. Why We Use It</h2>
+        <p>Your data is processed strictly for the following purposes:</p>
+        <ul>
+          <li>To analyze plant leaf symptoms and provide organic and chemical treatments.</li>
+          <li>To display your personal scan history on your device.</li>
+          <li>To protect the service against automated bot abuse (daily quota of 10 scans per user; 30 requests per IP per hour).</li>
+          <li><strong>Zero Ads & Zero Tracking:</strong> We do NOT sell your data, do NOT use advertising networks, and do NOT track you across third-party apps or websites.</li>
+        </ul>
+      </article>
+
+      <article class="policy-section">
+        <h2>4. Who We Share It With</h2>
+        <p>We disclose data strictly to essential infrastructure providers:</p>
+        <ul>
+          <li><strong>Google Gemini API:</strong> The plant photo is transmitted via encrypted HTTPS through our backend to Google's Gemini Vision API solely for image analysis. The image is processed in-memory and is <strong>not stored on our servers</strong>.</li>
+          <li><strong>Google Cloud & Firebase:</strong> Provides backend cloud functions (hosted in Mumbai / asia-south1 region for ultra-low latency in India), Cloud Firestore database, and App Check security.</li>
+          <li>We never sell or disclose your data to third-party data brokers or marketing firms.</li>
+        </ul>
+      </article>
+
+      <article class="policy-section">
+        <h2>5. How Long We Keep It</h2>
+        <p>Data retention is governed by automated server cleanup schedules:</p>
+        <ul>
+          <li><strong>Leaf Photos on Server:</strong> 0 seconds (processed in memory, never stored on disk).</li>
+          <li><strong>Local Phone Photos:</strong> Kept on your device until you clear history or remove app data.</li>
+          <li><strong>IP Rate Limit Records:</strong> Automatically purged after <strong>2 days</strong> (48 hours) by our daily scheduled server cleanup function.</li>
+          <li><strong>System Aggregated Stats:</strong> Retained for <strong>90 days</strong> for system health and billing protection.</li>
+          <li><strong>Scan Records & Feedback:</strong> Stored under your anonymous ID until you choose "Delete my data" in Settings.</li>
+        </ul>
+      </article>
+
+      <article class="policy-section">
+        <h2>6. Your Rights (Access, Deletion & Consent)</h2>
+        <p>You have full authority over your data:</p>
+        <ul>
+          <li><strong>Access:</strong> Review all past diagnoses in the History tab.</li>
+          <li><strong>Instant Deletion:</strong> Tap <strong>"Delete my data"</strong> in Settings to permanently delete your scans, feedback, user document, and Firebase Auth account from our servers and clear your local phone data.</li>
+          <li><strong>Withdraw Consent:</strong> You can withdraw consent anytime in Settings. Scanning features will remain paused until you choose to consent again.</li>
+        </ul>
+      </article>
+
+      <article class="policy-section">
+        <h2>7. Security</h2>
+        <p>All communication uses HTTPS/TLS encryption. IP addresses are hashed using SHA-256 with a secret salt. Diagnostic and authentication logs are strictly sanitized to redact photos and tokens.</p>
+      </article>
+
+      <article class="policy-section">
+        <h2>8. Children's Privacy</h2>
+        <p>Plantii is an agricultural diagnostic tool designed for farmers and is not directed to children under 13 years of age.</p>
+      </article>
+
+      <article class="policy-section">
+        <h2>9. Changes to This Policy</h2>
+        <p>If our privacy practices change, we will update the version number and effective date. Significant changes will present the Consent Screen again when launching the app.</p>
+      </article>
+
+      <article class="policy-section">
+        <h2>10. Contact & Grievance Contact</h2>
+        <p>Prakuty Tech<br>
+        Email: <a href="mailto:info@prakruty.com">info@prakruty.com</a><br>
+        Location: Chhattisgarh, India</p>
+      </article>
+
+      <article class="policy-section">
+        <h2>11. Effective Date and Version</h2>
+        <p>Effective Date: 14-10-2026<br>
+        Policy Version: 1.0</p>
+      </article>
+    </div>
+
+    <!-- ==================== HINDI SECTION ==================== -->
+    <div id="section-hi" style="display: none;">
+      <div class="summary-card">
+        <strong>गोपनीयता सारांश:</strong> प्लांटी आपकी गोपनीयता का पूरा सम्मान करता है। कोई व्यक्तिगत खाता नहीं, कोई विज्ञापन नहीं, डेटा की कोई बिक्री नहीं, और आपके पौधे की फोटो हमारे सर्वर पर कभी नहीं रखी जाती है।
+      </div>
+
+      <article class="policy-section">
+        <h2>1. हम कौन हैं</h2>
+        <p>प्लांटी एक कृषि तकनीकी सेवा है जिसे <strong>प्रकृती टेक (Prakuty Tech)</strong>, <strong>छत्तीसगढ़, भारत</strong> द्वारा विकसित किया गया है। हमारा उद्देश्य किसानों को त्वरित, सटीक और सरल फसल स्वास्थ्य परामर्श उपलब्ध कराना है। संपर्क: <a href="mailto:info@prakruty.com">info@prakruty.com</a>।</p>
+      </article>
+
+      <article class="policy-section">
+        <h2>2. हम क्या जानकारी एकत्र करते हैं</h2>
+        <p>हम केवल आवश्यक न्यूनतम जानकारी लेते हैं:</p>
+        <ul>
+          <li><strong>अज्ञात पहचान (UID):</strong> कोई नाम, मोबाइल नंबर या ईमेल नहीं लिया जाता। एक यादृच्छिक पहचान संख्या बनती है।</li>
+          <li><strong>पौधे की फोटो:</strong> पत्ती की फोटो केवल बीमारी की पहचान के लिए गूगल जेमिनी एआई को भेजी जाती है। हमारा बैकएंड सर्वर फोटो कभी स्टोर नहीं करता।</li>
+          <li><strong>फोन पर लोकल कॉपी:</strong> फोटो आपके फोन में रहती है ताकि आप बिना इंटरनेट भी 'इतिहास' (History) देख सकें।</li>
+          <li><strong>स्कैन व फीडबैक रिकॉर्ड:</strong> फसल, बीमारी का नाम, उपचार और आपके फीडबैक को क्लाउड डेटाबेस में सहेजा जाता है।</li>
+          <li><strong>सुरक्षा व सीमा:</strong> दुरुपयोग रोकने हेतु हैश किया हुआ आईपी (SHA-256) और दैनिक स्कैन संख्या सहेजी जाती है। वास्तविक आईपी कभी स्टोर नहीं होती।</li>
+          <li><strong>अनुमतियां:</strong> कैमरा अनुमति केवल पौधे की फोटो खींचने के लिए और गैलरी अनुमति केवल चुनी गई फोटो लोड करने के लिए ली जाती है।</li>
+          <li><strong>आवाज से सुनाना (TTS):</strong> टेक्स्ट-टू-स्पीच आपके फोन पर स्थानीय रूप से चलता है। कोई ऑडियो रिकॉर्ड नहीं होता।</li>
+        </ul>
+      </article>
+
+      <article class="policy-section">
+        <h2>3. उपयोग के उद्देश्य</h2>
+        <p>जानकारी का उपयोग केवल फसल रोग पहचान, उपचार मार्गदर्शन और दुरुपयोग रोकने (प्रतिदिन अधिकतम 10 स्कैन प्रति किसान) के लिए किया जाता है। हम कोई विज्ञापन नहीं दिखाते और डेटा कभी नहीं बेचते।</p>
+      </article>
+
+      <article class="policy-section">
+        <h2>4. किसके साथ साझा किया जाता है</h2>
+        <p>पौधे की फोटो केवल <strong>गूगल जेमिनी एआई</strong> को विश्लेषण के लिए भेजी जाती है। फोटो सर्वर पर स्टोर नहीं होती। डेटाबेस और बैकएंड सेवा <strong>गूगल क्लाउड / फायरबेस (मुंबई क्षेत्र)</strong> पर सुरक्षित है।</p>
+      </article>
+
+      <article class="policy-section">
+        <h2>5. डेटा कब तक रखा जाता है</h2>
+        <ul>
+          <li><strong>सर्वर पर पत्ती की फोटो:</strong> 0 सेकंड (मेमोरी में विश्लेषण के तुरंत बाद हटा दी जाती है)।</li>
+          <li><strong>आईपी रिकॉर्ड:</strong> 2 दिन (48 घंटे) बाद स्वचालित रूप से हटा दिए जाते हैं।</li>
+          <li><strong>सिस्टम आंकड़े:</strong> 90 दिनों तक लोड निगरानी के लिए रखे जाते हैं।</li>
+          <li><strong>स्कैन व फीडबैक:</strong> तब तक जब तक आप सेटिंग्स में 'मेरा डेटा हटाएं' का उपयोग नहीं करते।</li>
+        </ul>
+      </article>
+
+      <article class="policy-section">
+        <h2>6. आपके अधिकार</h2>
+        <p>आप सेटिंग्स में <strong>'मेरा डेटा हटाएं' (Delete my data)</strong> दबाकर अपना पूरा खाता, सभी स्कैन, फीडबैक और फोन का इतिहास किसी भी समय स्थायी रूप से मिटा सकते हैं। आप कभी भी सहमति वापस ले सकते हैं।</p>
+      </article>
+
+      <article class="policy-section">
+        <h2>7. सुरक्षा</h2>
+        <p>सभी डेटा HTTPS एन्क्रिप्शन से सुरक्षित है। आईपी पते को अपरिवर्तनीय हैश से सुरक्षित रखा जाता है।</p>
+      </article>
+
+      <article class="policy-section">
+        <h2>8. बच्चों की गोपनीयता</h2>
+        <p>यह ऐप किसानों के लिए है और 13 वर्ष से कम उम्र के बच्चों के लिए लक्षित नहीं है।</p>
+      </article>
+
+      <article class="policy-section">
+        <h2>9. नीति में बदलाव</h2>
+        <p>नीति में महत्वपूर्ण बदलाव होने पर ऐप खोलने पर आपको सहमति स्क्रीन पुनः दिखाई जाएगी।</p>
+      </article>
+
+      <article class="policy-section">
+        <h2>10. संपर्क व शिकायत निवारण</h2>
+        <p>प्रकृती टेक (Prakuty Tech)<br>
+        ईमेल: <a href="mailto:info@prakruty.com">info@prakruty.com</a><br>
+        स्थान: छत्तीसगढ़, भारत</p>
+      </article>
+
+      <article class="policy-section">
+        <h2>11. प्रभावी तिथि और संस्करण</h2>
+        <p>प्रभावी तिथि: 14-10-2026<br>
+        नीति संस्करण: 1.0</p>
+      </article>
+    </div>
+
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Prakuty Tech. All rights reserved. Plantii is an AI crop diagnostic utility.</p>
+    <p><a href="mailto:info@prakruty.com">info@prakruty.com</a> | Chhattisgarh, India</p>
+  </footer>
+
+  <script>
+    function showLang(lang) {
+      const enSec = document.getElementById('section-en');
+      const hiSec = document.getElementById('section-hi');
+      const btnEn = document.getElementById('btn-en');
+      const btnHi = document.getElementById('btn-hi');
+
+      if (lang === 'hi') {
+        enSec.style.display = 'none';
+        hiSec.style.display = 'block';
+        btnEn.classList.remove('active');
+        btnHi.classList.add('active');
+      } else {
+        enSec.style.display = 'block';
+        hiSec.style.display = 'none';
+        btnEn.classList.add('active');
+        btnHi.classList.remove('active');
+      }
+    }
+  </script>
+</body>
+</html>

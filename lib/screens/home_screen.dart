@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
 import '../routes.dart';
+import '../services/consent_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/circular_scan_button.dart';
 import '../widgets/quick_action_card.dart';
@@ -77,6 +78,66 @@ class _HomeScreenState extends State<HomeScreen> {
         duration: const Duration(seconds: 4),
       ),
     );
+  }
+
+  void _showConsentBlockedDialog(BuildContext context, AppLocalizations l10n) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.shield_outlined, color: AppTheme.forestGreen, size: 28),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                l10n.consentRequiredTitle,
+                style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          l10n.consentRequiredDesc,
+          style: const TextStyle(fontSize: 15.5, height: 1.45, color: AppTheme.highContrastDark),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              l10n.cancel,
+              style: const TextStyle(fontSize: 16, color: AppTheme.mutedDark),
+            ),
+          ),
+          ElevatedButton(
+            key: const ValueKey('review_consent_dialog_button'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.forestGreen,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.pushNamed(context, AppRoutes.consent);
+            },
+            child: Text(
+              l10n.consentReview,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _proceedToScan(BuildContext context, AppLocalizations l10n) async {
+    final hasConsent = await ConsentService.instance.hasValidConsent();
+    if (!context.mounted) return;
+    if (hasConsent) {
+      Navigator.pushNamed(context, AppRoutes.cropSelection);
+    } else {
+      _showConsentBlockedDialog(context, l10n);
+    }
   }
 
   void _showExpertDialog(BuildContext context, AppLocalizations l10n) {
@@ -169,6 +230,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                // Language Option
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: Container(
@@ -190,6 +252,30 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                 ),
                 const Divider(),
+                // Settings & Privacy Option
+                ListTile(
+                  key: const ValueKey('profile_settings_tile'),
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppTheme.leafGreenSubtle,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.settings_outlined, color: AppTheme.forestGreen),
+                  ),
+                  title: Text(
+                    l10n.settingsTitle,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    Navigator.pushNamed(context, AppRoutes.settings);
+                  },
+                ),
+                const Divider(),
+                // Helpline Option
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: Container(
@@ -280,45 +366,76 @@ class _HomeScreenState extends State<HomeScreen> {
                             ],
                           ),
 
-                          // Quick Language Toggle Chip
-                          Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(20),
-                              onTap: () {
-                                Navigator.pushNamed(context, AppRoutes.language);
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.12),
+                          // Quick Language Toggle Chip & Settings Button
+                          Row(
+                            children: [
+                              Material(
+                                color: Colors.transparent,
+                                child: InkWell(
                                   borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.2),
-                                    width: 1,
+                                  onTap: () {
+                                    Navigator.pushNamed(context, AppRoutes.language);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: Colors.white.withValues(alpha: 0.2),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.language_rounded,
+                                          color: Colors.white,
+                                          size: 18,
+                                        ),
+                                        SizedBox(width: 6),
+                                        Icon(
+                                          Icons.arrow_drop_down_rounded,
+                                          color: Colors.white,
+                                          size: 18,
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.language_rounded,
-                                      color: Colors.white,
-                                      size: 18,
+                              ),
+                              const SizedBox(width: 8),
+                              Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  key: const ValueKey('home_settings_button'),
+                                  borderRadius: BorderRadius.circular(20),
+                                  onTap: () {
+                                    Navigator.pushNamed(context, AppRoutes.settings);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(7),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.12),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.white.withValues(alpha: 0.2),
+                                        width: 1,
+                                      ),
                                     ),
-                                    SizedBox(width: 6),
-                                    Icon(
-                                      Icons.arrow_drop_down_rounded,
+                                    child: const Icon(
+                                      Icons.settings_outlined,
                                       color: Colors.white,
-                                      size: 18,
+                                      size: 19,
                                     ),
-                                  ],
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
                         ],
                       ),
@@ -395,10 +512,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       // Hero Circular Scan Button
                       CircularScanButton(
+                        key: const ValueKey('home_circular_scan_button'),
                         label: l10n.tapToScanLeaf,
-                        onTap: () {
-                          Navigator.pushNamed(context, AppRoutes.cropSelection);
-                        },
+                        onTap: () => _proceedToScan(context, l10n),
                       ),
                     ],
                   ),
@@ -430,9 +546,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     subtitle: l10n.actionGallerySubtitle,
                     iconBgColor: AppTheme.leafGreenSubtle,
                     iconColor: AppTheme.forestGreen,
-                    onTap: () {
-                      Navigator.pushNamed(context, AppRoutes.cropSelection);
-                    },
+                    onTap: () => _proceedToScan(context, l10n),
                   ),
 
                   // Card 2: Recent Scans History

@@ -89,4 +89,14 @@ class AuthService {
       return null;
     }
   }
+
+  /// Signs out the current user session
+  Future<void> signOut() async {
+    try {
+      await _auth?.signOut();
+      debugPrint('AuthService: User signed out successfully.');
+    } catch (e) {
+      debugPrint('AuthService: Error during sign out: $e');
+    }
+  }
 }

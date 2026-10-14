@@ -1,0 +1,133 @@
+{
+  "version": "1.0",
+  "effectiveDate": "14-10-2026",
+  "company": "Prakuty Tech",
+  "email": "info@prakruty.com",
+  "location": "India, Chhattisgarh",
+  "en": {
+    "title": "Privacy Policy for Plantii",
+    "lastUpdated": "14-10-2026",
+    "version": "Version 1.0",
+    "summary": "Plantii provides AI-powered crop diagnosis. We respect your privacy: no accounts with personal credentials, no ads, no selling data, and plant photos are never stored on our backend servers.",
+    "sections": [
+      {
+        "id": "who_we_are",
+        "title": "1. Who We Are",
+        "content": "Plantii is an agricultural technology service developed by Prakuty Tech, based in Chhattisgarh, India. Our mission is to empower farmers with fast, reliable, and accessible crop health diagnostics and leaf disease solutions. You can reach us anytime at info@prakruty.com."
+      },
+      {
+        "id": "what_we_collect",
+        "title": "2. What We Collect",
+        "content": "We practice strict data minimization. We only collect the minimal information necessary to deliver leaf diagnosis:\n\n• Anonymous User ID: When you open Plantii, Firebase Anonymous Authentication generates a random unique identifier (UID). We do not collect your real name, phone number, email address, or government identity.\n• Plant Leaf Photos: When you capture or upload a leaf photo, it is transmitted securely to our backend and Google's Gemini Vision AI service for diagnostic analysis. Our backend servers do NOT store your photos.\n• Local Storage: A copy of your leaf photo is kept locally on your phone so you can view your past scans in the History tab without needing internet access.\n• Diagnosis & Scan Records: We store your anonymous user ID, crop type, selected language, disease name, diagnosis text, severity rating, confidence level, treatments, and timestamp in Cloud Firestore.\n• User Feedback: If you tap thumbs-up or thumbs-down or submit an optional comment on a diagnosis, that feedback is recorded with your scan ID.\n• Abuse Prevention & Rate Limits: To prevent spam and fair-share resources, our server records a one-way cryptographically hashed (SHA-256 with salt) IP address and daily scan counts. We NEVER store raw IP addresses in our database.\n• Device Integrity: Firebase App Check and Google Play Integrity may verify that requests originate from genuine, unmodified copies of the Plantii app on certified devices.\n• Device Permissions: Camera permission is used solely to snap plant photos. Gallery permission is used solely to pick a plant photo you select. We do not access contacts, location, microphone, or unrelated files.\n• Text-to-Speech: The audio read-aloud feature runs completely on your phone using the device's native speech engine. No audio or voice is recorded or transmitted to any server."
+      },
+      {
+        "id": "why_we_use_it",
+        "title": "3. Why We Use It",
+        "content": "We process your information exclusively to:\n\n• Analyze plant leaves and provide disease identification and treatment recommendations.\n• Maintain your anonymous scan history across app restarts.\n• Protect the service against denial-of-service attacks, bot abuse, and unauthorized access (enforcing a daily quota of 10 scans per user).\n• We do NOT sell your data, do NOT use third-party advertising SDKs, and do NOT track you across other apps or websites."
+      },
+      {
+        "id": "who_we_share_with",
+        "title": "4. Who We Share It With",
+        "content": "We share data only with essential cloud infrastructure providers required to operate the service:\n\n• Google Gemini API: Your plant photo is transmitted via encrypted HTTPS through our backend to Google's Gemini API strictly for visual disease analysis. The photo is processed in-memory and is NOT retained or stored on our servers.\n• Google Cloud & Firebase: Used for hosting our backend functions (Mumbai / asia-south1 region in India for ultra-low latency), Cloud Firestore database, and App Check security.\n• We NEVER sell, rent, monetize, or disclose your data to advertisers, data brokers, or marketing partners."
+      },
+      {
+        "id": "retention",
+        "title": "5. How Long We Keep It",
+        "content": "Our data retention practices are strictly enforced by automated code and cleanup routines:\n\n• Server-side Leaf Photos: 0 seconds. Images are processed in-memory and never written to server disk or cloud storage.\n• Local Phone Photos & History: Stored on your device until you clear your scan history in the app or delete the app data.\n• Hashed IP Rate Limit Records: Automatically deleted after 2 days (48 hours) by our daily scheduled server cleanup function.\n• System Aggregated Statistics: Anonymized daily total scan counts are retained for 90 days for capacity monitoring and billing protection.\n• Scan Records & Feedback: Maintained in Cloud Firestore under your anonymous user ID until you request deletion or tap 'Delete my data' in Settings."
+      },
+      {
+        "id": "your_rights",
+        "title": "6. Your Rights & Control",
+        "content": "You maintain complete control over your data:\n\n• Right to Access: You can inspect all your historical scans anytime directly within the app's History screen.\n• Right to Deletion: You can permanently delete your entire account, all associated scans, feedback, server records, and local history at any moment by tapping 'Delete my data' in the Settings screen.\n• Right to Withdraw Consent: You can withdraw your consent for image processing anytime in Settings. Scanning features will remain paused until you choose to consent again.\n• Right to Inquire: Contact info@prakruty.com with questions regarding your data."
+      },
+      {
+        "id": "security",
+        "title": "7. Security Measures",
+        "content": "We implement robust technical and operational protections:\n\n• All communication is encrypted using modern TLS / HTTPS protocols.\n• IP addresses are protected via one-way cryptographic SHA-256 hashing with secret salting.\n• Server logs strictly redact leaf images, auth tokens, and API credentials.\n• Firestore security rules block all direct client database writes, ensuring every write is verified and mediated by authenticated Cloud Functions."
+      },
+      {
+        "id": "children",
+        "title": "8. Children's Privacy",
+        "content": "Plantii is an agricultural utility for farmers and growers and is not directed to children under 13 years of age. We do not knowingly collect information from children under 13."
+      },
+      {
+        "id": "changes",
+        "title": "9. Changes to This Privacy Policy",
+        "content": "We may update this Privacy Policy to reflect app enhancements or legal requirements. When updates occur, we will update the version number and effective date. If material changes are made, you will be presented with an updated Consent Screen upon launching the app."
+      },
+      {
+        "id": "contact",
+        "title": "10. Contact & Grievance Redressal",
+        "content": "For privacy questions, feedback, or grievance redressal, please contact:\n\nPrakuty Tech\nEmail: info@prakruty.com\nLocation: Chhattisgarh, India"
+      },
+      {
+        "id": "effective_date",
+        "title": "11. Effective Date & Version",
+        "content": "Effective Date: 14-10-2026\nPolicy Version: 1.0"
+      }
+    ]
+  },
+  "hi": {
+    "title": "प्लांटी (Plantii) गोपनीयता नीति",
+    "lastUpdated": "14-10-2026",
+    "version": "संस्करण 1.0",
+    "summary": "प्लांटी किसानों को एआई आधारित फसल रोग जांच प्रदान करता है। हम आपकी गोपनीयता का पूरा सम्मान करते हैं: कोई व्यक्तिगत खाता नहीं, कोई विज्ञापन नहीं, डेटा की कोई बिक्री नहीं, और आपके पौधे की फोटो हमारे सर्वर पर कभी नहीं रखी जाती है।",
+    "sections": [
+      {
+        "id": "who_we_are",
+        "title": "1. हम कौन हैं",
+        "content": "प्लांटी एक कृषि तकनीकी सेवा है जिसे प्रकृती टेक (Prakuty Tech), छत्तीसगढ़, भारत द्वारा विकसित किया गया है। हमारा उद्देश्य किसानों को त्वरित, सटीक और सरल फसल स्वास्थ्य परामर्श उपलब्ध कराना है। किसी भी प्रश्न के लिए आप हमसे info@prakruty.com पर संपर्क कर सकते हैं।"
+      },
+      {
+        "id": "what_we_collect",
+        "title": "2. हम क्या जानकारी एकत्र करते हैं",
+        "content": "हम केवल वही न्यूनतम जानकारी लेते हैं जो फसल जांच के लिए आवश्यक है:\n\n• अज्ञात उपयोगकर्ता पहचान (Anonymous UID): ऐप खोलने पर एक यादृच्छिक पहचान संख्या बनती है। हम आपका नाम, फोन नंबर, ईमेल या आधार/पहचान पत्र नहीं मांगते हैं।\n• पौधे की पत्ती की फोटो: जब आप पत्ती की फोटो लेते हैं, तो इसे बीमारी की जांच के लिए सुरक्षित रूप से गूगल जेमिनी एआई (Google Gemini) को भेजा जाता है। हमारा बैकएंड सर्वर आपकी फोटो कभी भी स्टोर नहीं करता है।\n• फोन पर लोकल कॉपी: आपके द्वारा ली गई पत्ती की फोटो आपके ही फोन में सुरक्षित रहती है, ताकि आप 'इतिहास' (History) में बिना इंटरनेट भी अपने पिछले परिणाम देख सकें।\n• स्कैन रिकॉर्ड: फसल का प्रकार, भाषा, बीमारी का नाम, लक्षण, उपचार और समय हमारे सुरक्षित क्लाउड डेटाबेस (Firestore) में सहेजा जाता है।\n• फीडबैक: यदि आप थम्स-अप (हाँ) या थम्स-डाउन (ना) या टिप्पणी देते हैं, तो वह रिकॉर्ड में जुड़ जाता है।\n• सुरक्षा व सीमाएं: दुरुपयोग रोकने के लिए एक-तरफ़ा हैश (SHA-256) किया हुआ आईपी पता और दैनिक स्कैन संख्या रिकॉर्ड की जाती है। हम कभी भी वास्तविक (raw) आईपी स्टोर नहीं करते।\n• ऐप चेक (App Check): ऐप की प्रामाणिकता जांचने के लिए फायरबेस ऐप चेक तकनीक का उपयोग किया जाता है।\n• फोन अनुमतियां (Permissions): कैमरे का उपयोग केवल पौधे की फोटो खींचने के लिए और गैलरी का उपयोग केवल आपके द्वारा चुनी गई पौधे की फोटो लोड करने के लिए किया जाता है।\n• बोलकर सुनाने की सुविधा (Text-to-Speech): जांच परिणाम पढ़कर सुनाने का काम पूरी तरह आपके फोन पर चलता है। कोई भी आवाज या ऑडियो रिकॉर्ड नहीं किया जाता।"
+      },
+      {
+        "id": "why_we_use_it",
+        "title": "3. हम इस जानकारी का उपयोग क्यों करते हैं",
+        "content": "हम जानकारी का उपयोग केवल इन कार्यों के लिए करते हैं:\n\n• फसल की बीमारी पहचानना और जैविक व रासायनिक उपचार सुझाव देना।\n• आपके पुराने स्कैन का इतिहास आपको दिखाना।\n• सेवा को सुरक्षित रखना और निष्पक्ष उपयोग सीमा (प्रतिदिन 10 स्कैन प्रति किसान) लागू करना।\n• हम आपका डेटा कभी किसी को नहीं बेचते और न ही विज्ञापनों के लिए उपयोग करते हैं।"
+      },
+      {
+        "id": "who_we_share_with",
+        "title": "4. हम यह जानकारी किसके साथ साझा करते हैं",
+        "content": "डेटा केवल सेवा संचालन के लिए आवश्यक विश्वसनीय प्रदाताओं के साथ साझा होता है:\n\n• गूगल जेमिनी एआई (Google Gemini): पौधे की फोटो केवल बीमारी की जांच के लिए गूगल की सुरक्षित एआई सेवा को भेजी जाती है। फोटो को मेमोरी में प्रोसेस किया जाता है और सर्वर पर स्टोर नहीं किया जाता।\n• गूगल क्लाउड / फायरबेस: सुरक्षित डेटाबेस, बैकएंड फंक्शन और सुरक्षा के लिए (मुंबई, भारत क्षेत्र)।\n• हम कभी भी विज्ञापनदाताओं, विपणन कंपनियों या डेटा दलालों के साथ डेटा साझा नहीं करते।"
+      },
+      {
+        "id": "retention",
+        "title": "5. हम डेटा कब तक रखते हैं",
+        "content": "हमारे बैकएंड कोड में स्वचालित डेटा सफाई नियम निर्धारित हैं:\n\n• सर्वर पर पत्ती की फोटो: 0 सेकंड (मेमोरी में जांच के तुरंत बाद हटा दी जाती है)।\n• फोन पर फोटो: आपके फोन में रहती है जब तक आप इतिहास न मिटाएं।\n• हैश किए गए आईपी रिकॉर्ड: 2 दिन (48 घंटे) बाद स्वचालित रूप से सर्वर से हटा दिए जाते हैं।\n• कुल दैनिक आंकड़े: 90 दिनों तक सिस्टम सुरक्षा व लोड निगरानी के लिए रखे जाते हैं।\n• स्कैन व फीडबैक रिकॉर्ड: तब तक रहते हैं जब तक आप सेटिंग्स में 'मेरा डेटा हटाएं' का उपयोग नहीं करते।"
+      },
+      {
+        "id": "your_rights",
+        "title": "6. आपके अधिकार और नियंत्रण",
+        "content": "आप अपने डेटा पर पूर्ण नियंत्रण रखते हैं:\n\n• देखने का अधिकार: आप 'इतिहास' स्क्रीन में कभी भी अपने सभी स्कैन देख सकते हैं।\n• हटाने का अधिकार: आप सेटिंग्स में 'मेरा डेटा हटाएं' (Delete my data) बटन दबाकर अपना पूरा खाता, सभी स्कैन और फीडबैक तुरंत व स्थायी रूप से मिटा सकते हैं।\n• सहमति वापस लेना: आप सेटिंग्स में कभी भी अपनी सहमति वापस ले सकते हैं। सहमति वापस लेने पर स्कैनिंग सुविधा बंद रहेगी।\n• सहायता: किसी भी प्रश्न के लिए info@prakruty.com पर संपर्क करें।"
+      },
+      {
+        "id": "security",
+        "title": "7. सुरक्षा उपाय",
+        "content": "• सभी संचार आधुनिक HTTPS / TLS एन्क्रिप्शन द्वारा सुरक्षित हैं।\n• आईपी पते को अपरिवर्तनीय क्रिप्टोग्राफ़िक हैश (SHA-256) से सुरक्षित रखा जाता है।\n• सर्वर लॉग में फोटो और पासवर्ड जैसी गोपनीय जानकारी पूरी तरह छिपाई (redact) जाती है।"
+      },
+      {
+        "id": "children",
+        "title": "8. बच्चों की गोपनीयता",
+        "content": "यह ऐप किसानों और फसल उत्पादकों के लिए है और 13 वर्ष से कम उम्र के बच्चों के लिए लक्षित नहीं है।"
+      },
+      {
+        "id": "changes",
+        "title": "9. नीति में बदलाव",
+        "content": "यदि इस गोपनीयता नीति में कोई महत्वपूर्ण बदलाव होता है, तो ऐप खोलने पर आपको सहमति स्क्रीन पुनः दिखाई जाएगी और नया संस्करण अपडेट किया जाएगा।"
+      },
+      {
+        "id": "contact",
+        "title": "10. संपर्क व शिकायत निवारण",
+        "content": "गोपनीयता या सहायता संबंधी किसी भी जानकारी के लिए:\n\nप्रकृती टेक (Prakuty Tech)\nईमेल: info@prakruty.com\nस्थान: छत्तीसगढ़, भारत"
+      },
+      {
+        "id": "effective_date",
+        "title": "11. प्रभावी तिथि और संस्करण",
+        "content": "प्रभावी तिथि: 14-10-2026\nनीति संस्करण: 1.0"
+      }
+    ]
+  }
+}

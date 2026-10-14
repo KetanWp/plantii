@@ -619,6 +619,222 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not submit feedback.'**
   String get feedbackError;
+
+  /// Title for first-launch consent screen
+  ///
+  /// In en, this message translates to:
+  /// **'Important Privacy & AI Notice'**
+  String get consentTitle;
+
+  /// Subtitle for consent screen
+  ///
+  /// In en, this message translates to:
+  /// **'Please review how Plantii handles your plant photos and data before scanning.'**
+  String get consentSubtitle;
+
+  /// Line 1 explaining AI photo processing
+  ///
+  /// In en, this message translates to:
+  /// **'Your plant photo is sent to an AI service (Google Gemini) to diagnose the problem'**
+  String get consentLine1;
+
+  /// Line 2 explaining scan history storage
+  ///
+  /// In en, this message translates to:
+  /// **'We save your scan results to your anonymous account so you can see history'**
+  String get consentLine2;
+
+  /// Line 3 explaining zero ads and no selling data
+  ///
+  /// In en, this message translates to:
+  /// **'We don\'t sell your data or use it for ads'**
+  String get consentLine3;
+
+  /// Line 4 explaining AI guidance limitation
+  ///
+  /// In en, this message translates to:
+  /// **'AI advice is guidance, not a guarantee. For serious problems, ask an expert.'**
+  String get consentLine4;
+
+  /// Line 5 explaining data deletion right in Settings
+  ///
+  /// In en, this message translates to:
+  /// **'You can delete your data anytime in Settings'**
+  String get consentLine5;
+
+  /// Link to view full in-app privacy policy
+  ///
+  /// In en, this message translates to:
+  /// **'Read Full Privacy Policy'**
+  String get readFullPrivacyPolicy;
+
+  /// Button to accept consent
+  ///
+  /// In en, this message translates to:
+  /// **'I Agree'**
+  String get consentAgree;
+
+  /// Button to decline consent
+  ///
+  /// In en, this message translates to:
+  /// **'No Thanks'**
+  String get consentDecline;
+
+  /// Dialog title when user declines consent
+  ///
+  /// In en, this message translates to:
+  /// **'Consent Required to Scan'**
+  String get consentRequiredTitle;
+
+  /// Dialog description when user declines consent
+  ///
+  /// In en, this message translates to:
+  /// **'Plantii uses AI to analyze plant leaf photos. Without your consent, scanning features remain blocked. You can still browse the app and agree whenever you are ready.'**
+  String get consentRequiredDesc;
+
+  /// Button to go back from consent dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Go Back'**
+  String get consentGoBack;
+
+  /// Button to review consent
+  ///
+  /// In en, this message translates to:
+  /// **'Review Consent'**
+  String get consentReview;
+
+  /// Title for settings screen
+  ///
+  /// In en, this message translates to:
+  /// **'Settings & Privacy'**
+  String get settingsTitle;
+
+  /// Settings item for privacy policy
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get settingsPrivacyPolicy;
+
+  /// Subtitle for privacy policy setting
+  ///
+  /// In en, this message translates to:
+  /// **'Read our full privacy policy and data practices'**
+  String get settingsPrivacyPolicyDesc;
+
+  /// Settings item to delete all user data
+  ///
+  /// In en, this message translates to:
+  /// **'Delete My Data'**
+  String get settingsDeleteData;
+
+  /// Subtitle for delete data setting
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently erase scans, feedback, and account'**
+  String get settingsDeleteDataDesc;
+
+  /// Settings item to withdraw consent
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw Consent'**
+  String get settingsWithdrawConsent;
+
+  /// Subtitle for withdraw consent setting
+  ///
+  /// In en, this message translates to:
+  /// **'Stop AI image processing and block scanning'**
+  String get settingsWithdrawConsentDesc;
+
+  /// Settings item to contact support via mailto
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Support'**
+  String get settingsContactSupport;
+
+  /// Email address for support
+  ///
+  /// In en, this message translates to:
+  /// **'info@prakruty.com'**
+  String get settingsContactSupportDesc;
+
+  /// Settings item for app version
+  ///
+  /// In en, this message translates to:
+  /// **'App Version'**
+  String get settingsAppVersion;
+
+  /// Title for delete confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently Delete Data?'**
+  String get deleteConfirmTitle;
+
+  /// Warning description for delete confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'This will permanently delete your account, all scan history, saved photos, and feedback from our servers and this phone. This action cannot be undone.'**
+  String get deleteConfirmDesc;
+
+  /// Action button to confirm deletion
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Everything'**
+  String get deleteConfirmButton;
+
+  /// Loading message during account deletion
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting your data permanently...'**
+  String get deletingDataProgress;
+
+  /// Snackbar message on successful deletion
+  ///
+  /// In en, this message translates to:
+  /// **'Your data and account have been deleted successfully.'**
+  String get deleteDataSuccess;
+
+  /// Snackbar message on failed deletion
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete account. Please check your connection and try again.'**
+  String get deleteDataError;
+
+  /// Title for withdraw consent dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw Consent?'**
+  String get withdrawConfirmTitle;
+
+  /// Description for withdraw consent dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Withdrawing consent will block scanning and AI leaf diagnosis until you choose to consent again.'**
+  String get withdrawConfirmDesc;
+
+  /// Button to confirm consent withdrawal
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw Consent'**
+  String get withdrawConfirmButton;
+
+  /// Snackbar message after withdrawing consent
+  ///
+  /// In en, this message translates to:
+  /// **'Consent withdrawn. Scanning features are now disabled.'**
+  String get withdrawSuccess;
+
+  /// General cancel button
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// Short disclaimer shown on diseased result screen
+  ///
+  /// In en, this message translates to:
+  /// **'AI guidance, not a guarantee.'**
+  String get aiDisclaimer;
 }
 
 class _AppLocalizationsDelegate

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../l10n/app_localizations.dart';
 import '../routes.dart';
+import '../services/consent_service.dart';
 import '../services/locale_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/big_touch_button.dart';
@@ -43,9 +44,15 @@ class LanguageSelectionScreen extends StatelessWidget {
               BigTouchButton(
                 label: 'हिन्दी (Hindi)',
                 isPrimary: localeProvider.isHindi,
-                onPressed: () {
+                onPressed: () async {
                   localeProvider.setLocale(const Locale('hi'));
-                  Navigator.pushReplacementNamed(context, AppRoutes.home);
+                  final hasConsent = await ConsentService.instance.hasValidConsent();
+                  if (!context.mounted) return;
+                  if (hasConsent) {
+                    Navigator.pushReplacementNamed(context, AppRoutes.home);
+                  } else {
+                    Navigator.pushReplacementNamed(context, AppRoutes.consent);
+                  }
                 },
               ),
               const SizedBox(height: 16),
@@ -53,9 +60,15 @@ class LanguageSelectionScreen extends StatelessWidget {
               BigTouchButton(
                 label: 'English',
                 isPrimary: !localeProvider.isHindi,
-                onPressed: () {
+                onPressed: () async {
                   localeProvider.setLocale(const Locale('en'));
-                  Navigator.pushReplacementNamed(context, AppRoutes.home);
+                  final hasConsent = await ConsentService.instance.hasValidConsent();
+                  if (!context.mounted) return;
+                  if (hasConsent) {
+                    Navigator.pushReplacementNamed(context, AppRoutes.home);
+                  } else {
+                    Navigator.pushReplacementNamed(context, AppRoutes.consent);
+                  }
                 },
               ),
             ],

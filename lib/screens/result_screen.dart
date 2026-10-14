@@ -427,7 +427,35 @@ class _ResultScreenState extends State<ResultScreen> {
 
       // Traffic-light severity & Confidence in words
       _buildSeverityAndConfidence(context, diagnosis, l10n),
-      const SizedBox(height: 20),
+      const SizedBox(height: 12),
+
+      // Short AI disclaimer notice
+      Container(
+        key: const ValueKey('ai_guidance_disclaimer'),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppTheme.leafGreenSubtle,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.forestGreen.withValues(alpha: 0.25)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.info_outline_rounded, size: 18, color: AppTheme.forestGreen),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                l10n.aiDisclaimer,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.forestGreen,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 14),
 
       // Card: What it is
       _buildCardSection(

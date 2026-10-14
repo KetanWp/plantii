@@ -357,5 +357,149 @@
   "feedbackError": "Could not submit feedback.",
   "@feedbackError": {
     "description": "Error message when feedback submission fails"
+  },
+  "consentTitle": "Important Privacy & AI Notice",
+  "@consentTitle": {
+    "description": "Title for first-launch consent screen"
+  },
+  "consentSubtitle": "Please review how Plantii handles your plant photos and data before scanning.",
+  "@consentSubtitle": {
+    "description": "Subtitle for consent screen"
+  },
+  "consentLine1": "Your plant photo is sent to an AI service (Google Gemini) to diagnose the problem",
+  "@consentLine1": {
+    "description": "Line 1 explaining AI photo processing"
+  },
+  "consentLine2": "We save your scan results to your anonymous account so you can see history",
+  "@consentLine2": {
+    "description": "Line 2 explaining scan history storage"
+  },
+  "consentLine3": "We don't sell your data or use it for ads",
+  "@consentLine3": {
+    "description": "Line 3 explaining zero ads and no selling data"
+  },
+  "consentLine4": "AI advice is guidance, not a guarantee. For serious problems, ask an expert.",
+  "@consentLine4": {
+    "description": "Line 4 explaining AI guidance limitation"
+  },
+  "consentLine5": "You can delete your data anytime in Settings",
+  "@consentLine5": {
+    "description": "Line 5 explaining data deletion right in Settings"
+  },
+  "readFullPrivacyPolicy": "Read Full Privacy Policy",
+  "@readFullPrivacyPolicy": {
+    "description": "Link to view full in-app privacy policy"
+  },
+  "consentAgree": "I Agree",
+  "@consentAgree": {
+    "description": "Button to accept consent"
+  },
+  "consentDecline": "No Thanks",
+  "@consentDecline": {
+    "description": "Button to decline consent"
+  },
+  "consentRequiredTitle": "Consent Required to Scan",
+  "@consentRequiredTitle": {
+    "description": "Dialog title when user declines consent"
+  },
+  "consentRequiredDesc": "Plantii uses AI to analyze plant leaf photos. Without your consent, scanning features remain blocked. You can still browse the app and agree whenever you are ready.",
+  "@consentRequiredDesc": {
+    "description": "Dialog description when user declines consent"
+  },
+  "consentGoBack": "Go Back",
+  "@consentGoBack": {
+    "description": "Button to go back from consent dialog"
+  },
+  "consentReview": "Review Consent",
+  "@consentReview": {
+    "description": "Button to review consent"
+  },
+  "settingsTitle": "Settings & Privacy",
+  "@settingsTitle": {
+    "description": "Title for settings screen"
+  },
+  "settingsPrivacyPolicy": "Privacy Policy",
+  "@settingsPrivacyPolicy": {
+    "description": "Settings item for privacy policy"
+  },
+  "settingsPrivacyPolicyDesc": "Read our full privacy policy and data practices",
+  "@settingsPrivacyPolicyDesc": {
+    "description": "Subtitle for privacy policy setting"
+  },
+  "settingsDeleteData": "Delete My Data",
+  "@settingsDeleteData": {
+    "description": "Settings item to delete all user data"
+  },
+  "settingsDeleteDataDesc": "Permanently erase scans, feedback, and account",
+  "@settingsDeleteDataDesc": {
+    "description": "Subtitle for delete data setting"
+  },
+  "settingsWithdrawConsent": "Withdraw Consent",
+  "@settingsWithdrawConsent": {
+    "description": "Settings item to withdraw consent"
+  },
+  "settingsWithdrawConsentDesc": "Stop AI image processing and block scanning",
+  "@settingsWithdrawConsentDesc": {
+    "description": "Subtitle for withdraw consent setting"
+  },
+  "settingsContactSupport": "Contact Support",
+  "@settingsContactSupport": {
+    "description": "Settings item to contact support via mailto"
+  },
+  "settingsContactSupportDesc": "info@prakruty.com",
+  "@settingsContactSupportDesc": {
+    "description": "Email address for support"
+  },
+  "settingsAppVersion": "App Version",
+  "@settingsAppVersion": {
+    "description": "Settings item for app version"
+  },
+  "deleteConfirmTitle": "Permanently Delete Data?",
+  "@deleteConfirmTitle": {
+    "description": "Title for delete confirmation dialog"
+  },
+  "deleteConfirmDesc": "This will permanently delete your account, all scan history, saved photos, and feedback from our servers and this phone. This action cannot be undone.",
+  "@deleteConfirmDesc": {
+    "description": "Warning description for delete confirmation dialog"
+  },
+  "deleteConfirmButton": "Delete Everything",
+  "@deleteConfirmButton": {
+    "description": "Action button to confirm deletion"
+  },
+  "deletingDataProgress": "Deleting your data permanently...",
+  "@deletingDataProgress": {
+    "description": "Loading message during account deletion"
+  },
+  "deleteDataSuccess": "Your data and account have been deleted successfully.",
+  "@deleteDataSuccess": {
+    "description": "Snackbar message on successful deletion"
+  },
+  "deleteDataError": "Failed to delete account. Please check your connection and try again.",
+  "@deleteDataError": {
+    "description": "Snackbar message on failed deletion"
+  },
+  "withdrawConfirmTitle": "Withdraw Consent?",
+  "@withdrawConfirmTitle": {
+    "description": "Title for withdraw consent dialog"
+  },
+  "withdrawConfirmDesc": "Withdrawing consent will block scanning and AI leaf diagnosis until you choose to consent again.",
+  "@withdrawConfirmDesc": {
+    "description": "Description for withdraw consent dialog"
+  },
+  "withdrawConfirmButton": "Withdraw Consent",
+  "@withdrawConfirmButton": {
+    "description": "Button to confirm consent withdrawal"
+  },
+  "withdrawSuccess": "Consent withdrawn. Scanning features are now disabled.",
+  "@withdrawSuccess": {
+    "description": "Snackbar message after withdrawing consent"
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "General cancel button"
+  },
+  "aiDisclaimer": "AI guidance, not a guarantee.",
+  "@aiDisclaimer": {
+    "description": "Short disclaimer shown on diseased result screen"
   }
 }

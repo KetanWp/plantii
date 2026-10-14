@@ -283,4 +283,125 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get feedbackError => 'Could not submit feedback.';
+
+  @override
+  String get consentTitle => 'Important Privacy & AI Notice';
+
+  @override
+  String get consentSubtitle =>
+      'Please review how Plantii handles your plant photos and data before scanning.';
+
+  @override
+  String get consentLine1 =>
+      'Your plant photo is sent to an AI service (Google Gemini) to diagnose the problem';
+
+  @override
+  String get consentLine2 =>
+      'We save your scan results to your anonymous account so you can see history';
+
+  @override
+  String get consentLine3 => 'We don\'t sell your data or use it for ads';
+
+  @override
+  String get consentLine4 =>
+      'AI advice is guidance, not a guarantee. For serious problems, ask an expert.';
+
+  @override
+  String get consentLine5 => 'You can delete your data anytime in Settings';
+
+  @override
+  String get readFullPrivacyPolicy => 'Read Full Privacy Policy';
+
+  @override
+  String get consentAgree => 'I Agree';
+
+  @override
+  String get consentDecline => 'No Thanks';
+
+  @override
+  String get consentRequiredTitle => 'Consent Required to Scan';
+
+  @override
+  String get consentRequiredDesc =>
+      'Plantii uses AI to analyze plant leaf photos. Without your consent, scanning features remain blocked. You can still browse the app and agree whenever you are ready.';
+
+  @override
+  String get consentGoBack => 'Go Back';
+
+  @override
+  String get consentReview => 'Review Consent';
+
+  @override
+  String get settingsTitle => 'Settings & Privacy';
+
+  @override
+  String get settingsPrivacyPolicy => 'Privacy Policy';
+
+  @override
+  String get settingsPrivacyPolicyDesc =>
+      'Read our full privacy policy and data practices';
+
+  @override
+  String get settingsDeleteData => 'Delete My Data';
+
+  @override
+  String get settingsDeleteDataDesc =>
+      'Permanently erase scans, feedback, and account';
+
+  @override
+  String get settingsWithdrawConsent => 'Withdraw Consent';
+
+  @override
+  String get settingsWithdrawConsentDesc =>
+      'Stop AI image processing and block scanning';
+
+  @override
+  String get settingsContactSupport => 'Contact Support';
+
+  @override
+  String get settingsContactSupportDesc => 'info@prakruty.com';
+
+  @override
+  String get settingsAppVersion => 'App Version';
+
+  @override
+  String get deleteConfirmTitle => 'Permanently Delete Data?';
+
+  @override
+  String get deleteConfirmDesc =>
+      'This will permanently delete your account, all scan history, saved photos, and feedback from our servers and this phone. This action cannot be undone.';
+
+  @override
+  String get deleteConfirmButton => 'Delete Everything';
+
+  @override
+  String get deletingDataProgress => 'Deleting your data permanently...';
+
+  @override
+  String get deleteDataSuccess =>
+      'Your data and account have been deleted successfully.';
+
+  @override
+  String get deleteDataError =>
+      'Failed to delete account. Please check your connection and try again.';
+
+  @override
+  String get withdrawConfirmTitle => 'Withdraw Consent?';
+
+  @override
+  String get withdrawConfirmDesc =>
+      'Withdrawing consent will block scanning and AI leaf diagnosis until you choose to consent again.';
+
+  @override
+  String get withdrawConfirmButton => 'Withdraw Consent';
+
+  @override
+  String get withdrawSuccess =>
+      'Consent withdrawn. Scanning features are now disabled.';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get aiDisclaimer => 'AI guidance, not a guarantee.';
 }

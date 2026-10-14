@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 
 import '../models/diagnosis.dart';
 import 'auth_service.dart';
+import 'scan_history_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Distinct error categories for diagnosis failures
 enum DiagnosisErrorType {
@@ -350,6 +352,111 @@ class RealDiagnosisService {
       }
     } catch (e) {
       debugPrint('RealDiagnosisService: Error submitting feedback: $e');
+      return false;
+    }
+  }
+
+  /// Records user privacy consent on the backend
+  Future<bool> recordConsent({
+    String consentVersion = '1.0',
+    String? language,
+  }) async {
+    try {
+      final String? idToken = await _authService.getIdToken();
+      if (idToken == null) {
+        debugPrint('RealDiagnosisService: Cannot record consent without auth token');
+        return false;
+      }
+
+      final Uri consentUri = Uri.parse('$_baseUrl/consent');
+      final response = await _httpClient
+          .post(
+            consentUri,
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $idToken',
+            },
+            body: jsonEncode({
+              'consentVersion': consentVersion,
+              'language': language ?? 'en',
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        debugPrint('RealDiagnosisService: Consent recorded on backend successfully');
+        return true;
+      } else {
+        debugPrint('RealDiagnosisService: Consent failed with status ${response.statusCode}: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('RealDiagnosisService: Error recording consent: $e');
+      return false;
+    }
+  }
+
+  /// Permanently deletes user account, scans, feedback, and Firestore document on backend,
+  /// then wipes local photos, history, consent, and signs out.
+  Future<bool> deleteAccount({String? language}) async {
+    try {
+      final String? idToken = await _authService.getIdToken();
+      if (idToken == null) {
+        debugPrint('RealDiagnosisService: Cannot delete account without auth token');
+        return false;
+      }
+
+      final Uri accountUri = Uri.parse('$_baseUrl/account');
+      final response = await _httpClient
+          .delete(
+            accountUri,
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $idToken',
+            },
+            body: jsonEncode({
+              'language': language ?? 'en',
+            }),
+          )
+          .timeout(const Duration(seconds: 20));
+
+      if (response.statusCode == 200) {
+        debugPrint('RealDiagnosisService: Backend account and data deleted successfully');
+
+        // 1. Delete local photo files from disk
+        final historyService = ScanHistoryService();
+        final scans = await historyService.getHistory();
+        for (final scan in scans) {
+          if (scan.photoPath.isNotEmpty) {
+            try {
+              final file = File(scan.photoPath);
+              if (file.existsSync()) {
+                file.deleteSync();
+              }
+            } catch (err) {
+              debugPrint('RealDiagnosisService: Failed to delete local photo ${scan.photoPath}: $err');
+            }
+          }
+        }
+
+        // 2. Clear local history records
+        await historyService.clearHistory();
+
+        // 3. Clear consent stored in SharedPreferences
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('plantii_consent_policy_version');
+        await prefs.remove('plantii_consent_timestamp');
+
+        // 4. Sign out
+        await _authService.signOut();
+
+        return true;
+      } else {
+        debugPrint('RealDiagnosisService: Account deletion rejected (${response.statusCode}): ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('RealDiagnosisService: Error during deleteAccount: $e');
       return false;
     }
   }

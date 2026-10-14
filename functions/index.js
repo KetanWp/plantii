@@ -38,6 +38,7 @@ const { sanitizeRequestLogging, safeLogger } = require('./middleware/sanitizeLog
 // Import route handlers
 const { createDiagnoseHandler } = require('./routes/diagnose');
 const { handleFeedback } = require('./routes/feedback');
+const { handleConsent, handleDeleteAccount } = require('./routes/account');
 
 // Define Firebase Secret for Gemini API key (never hardcoded in code)
 const geminiApiKeySecret = defineSecret('GEMINI_API_KEY');
@@ -106,6 +107,32 @@ app.post(
   verifyAuth,
   checkIpRateLimit,
   handleFeedback
+);
+
+// POST /consent
+// 1. Verify App Check token
+// 2. Verify Firebase Auth token
+// 3. Check Per-IP rate limit
+// 4. Record consent version & server timestamp on users/{uid}
+app.post(
+  '/consent',
+  verifyAppCheck,
+  verifyAuth,
+  checkIpRateLimit,
+  handleConsent
+);
+
+// DELETE /account
+// 1. Verify App Check token
+// 2. Verify Firebase Auth token
+// 3. Check Per-IP rate limit
+// 4. Delete scans, feedback, users/{uid} doc, and Auth user
+app.delete(
+  '/account',
+  verifyAppCheck,
+  verifyAuth,
+  checkIpRateLimit,
+  handleDeleteAccount
 );
 
 // Handle 404 for unknown routes

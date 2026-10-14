@@ -283,4 +283,127 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get feedbackError => 'प्रतिक्रिया भेजने में समस्या आई।';
+
+  @override
+  String get consentTitle => 'महत्वपूर्ण गोपनीयता और एआई सूचना';
+
+  @override
+  String get consentSubtitle =>
+      'स्कैन करने से पहले कृपया समझें कि प्लांटी आपके पौधे की फोटो और डेटा का उपयोग कैसे करता है।';
+
+  @override
+  String get consentLine1 =>
+      'पौधे की समस्या पहचानने के लिए पत्ती की फोटो सुरक्षित एआई सेवा (गूगल जेमिनी) को भेजी जाती है';
+
+  @override
+  String get consentLine2 =>
+      'हम आपके स्कैन परिणाम को आपके अज्ञात खाते में सहेजते हैं ताकि आप पुराना इतिहास देख सकें';
+
+  @override
+  String get consentLine3 =>
+      'हम आपका डेटा कभी किसी को नहीं बेचते और न ही विज्ञापनों में उपयोग करते हैं';
+
+  @override
+  String get consentLine4 =>
+      'एआई सलाह केवल मार्गदर्शन है, गारंटी नहीं। गंभीर समस्या होने पर कृषि विशेषज्ञ से सलाह लें।';
+
+  @override
+  String get consentLine5 =>
+      'आप सेटिंग्स में जाकर किसी भी समय अपना पूरा डेटा मिटा सकते हैं';
+
+  @override
+  String get readFullPrivacyPolicy => 'पूरी गोपनीयता नीति पढ़ें';
+
+  @override
+  String get consentAgree => 'स्वीकार करें';
+
+  @override
+  String get consentDecline => 'अभी नहीं';
+
+  @override
+  String get consentRequiredTitle => 'स्कैन करने के लिए सहमति आवश्यक है';
+
+  @override
+  String get consentRequiredDesc =>
+      'प्लांटी पत्तियों की फोटो जांचने के लिए एआई तकनीक का उपयोग करता है। बिना सहमति के स्कैनिंग सुविधा बंद रहेगी। आप ऐप देख सकते हैं और तैयार होने पर कभी भी सहमति दे सकते हैं।';
+
+  @override
+  String get consentGoBack => 'वापस जाएं';
+
+  @override
+  String get consentReview => 'सहमति देखें';
+
+  @override
+  String get settingsTitle => 'सेटिंग्स और गोपनीयता';
+
+  @override
+  String get settingsPrivacyPolicy => 'गोपनीयता नीति';
+
+  @override
+  String get settingsPrivacyPolicyDesc =>
+      'पूरी गोपनीयता नीति और डेटा नियम पढ़ें';
+
+  @override
+  String get settingsDeleteData => 'मेरा डेटा हटाएं';
+
+  @override
+  String get settingsDeleteDataDesc =>
+      'अपने सभी स्कैन, फीडबैक और खाता हमेशा के लिए मिटाएं';
+
+  @override
+  String get settingsWithdrawConsent => 'सहमति वापस लें';
+
+  @override
+  String get settingsWithdrawConsentDesc =>
+      'एआई फोटो विश्लेषण रोकें और स्कैनिंग बंद करें';
+
+  @override
+  String get settingsContactSupport => 'सहायता से संपर्क करें';
+
+  @override
+  String get settingsContactSupportDesc => 'info@prakruty.com';
+
+  @override
+  String get settingsAppVersion => 'ऐप संस्करण';
+
+  @override
+  String get deleteConfirmTitle => 'क्या आप सारा डेटा मिटाना चाहते हैं?';
+
+  @override
+  String get deleteConfirmDesc =>
+      'यह आपके खाते, सभी पुराने स्कैन, सहेजी गई फोटो और फीडबैक को सर्वर व इस फोन से हमेशा के लिए मिटा देगा। यह क्रिया वापस नहीं ली जा सकती।';
+
+  @override
+  String get deleteConfirmButton => 'सब कुछ हटाएं';
+
+  @override
+  String get deletingDataProgress => 'डेटा स्थायी रूप से हटाया जा रहा है...';
+
+  @override
+  String get deleteDataSuccess =>
+      'आपका डेटा और खाता सफलतापूर्वक मिटा दिया गया है।';
+
+  @override
+  String get deleteDataError =>
+      'खाता हटाने में समस्या आई। कृपया इंटरनेट जांचें और पुनः प्रयास करें।';
+
+  @override
+  String get withdrawConfirmTitle => 'सहमति वापस लेना चाहते हैं?';
+
+  @override
+  String get withdrawConfirmDesc =>
+      'सहमति वापस लेने पर स्कैनिंग और एआई जांच सुविधा तब तक बंद रहेगी जब तक आप पुनः सहमति नहीं देते।';
+
+  @override
+  String get withdrawConfirmButton => 'सहमति वापस लें';
+
+  @override
+  String get withdrawSuccess =>
+      'सहमति वापस ले ली गई है। स्कैनिंग सुविधा बंद कर दी गई है।';
+
+  @override
+  String get cancel => 'रद्द करें';
+
+  @override
+  String get aiDisclaimer => 'एआई सलाह केवल मार्गदर्शन है, गारंटी नहीं।';
 }

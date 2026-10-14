@@ -6,13 +6,13 @@ import '../theme/app_theme.dart';
 class BigTouchButton extends StatelessWidget {
   final String label;
   final IconData? icon;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final bool isPrimary;
 
   const BigTouchButton({
     super.key,
     required this.label,
-    required this.onPressed,
+    this.onPressed,
     this.icon,
     this.isPrimary = true,
   });
