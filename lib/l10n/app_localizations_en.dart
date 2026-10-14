@@ -249,4 +249,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileVersion => 'Plantii v1.0.0';
+
+  @override
+  String get errorNoInternet =>
+      'No internet connection. Please check your network and try again.';
+
+  @override
+  String get errorTimeout =>
+      'The diagnosis request timed out after 60 seconds. Please try again.';
+
+  @override
+  String get errorRateLimited =>
+      'Daily scan limit reached (maximum 10 scans per day). Please try again tomorrow.';
+
+  @override
+  String get errorBadImage =>
+      'The leaf photo was not clear enough or unsupported. Please retake a clear photo.';
+
+  @override
+  String get errorAiFailed =>
+      'Failed to analyze crop leaf. Please retry with a clearer photo.';
+
+  @override
+  String get retakePhoto => 'Retake Photo';
+
+  @override
+  String get backToHome => 'Back to Home';
+
+  @override
+  String get submittingFeedback => 'Submitting feedback...';
+
+  @override
+  String get feedbackSuccess => 'Thank you for your feedback!';
+
+  @override
+  String get feedbackError => 'Could not submit feedback.';
 }

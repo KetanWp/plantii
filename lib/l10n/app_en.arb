@@ -317,5 +317,45 @@
   "profileVersion": "Plantii v1.0.0",
   "@profileVersion": {
     "description": "Version info in profile"
+  },
+  "errorNoInternet": "No internet connection. Please check your network and try again.",
+  "@errorNoInternet": {
+    "description": "Error message when device is offline"
+  },
+  "errorTimeout": "The diagnosis request timed out after 60 seconds. Please try again.",
+  "@errorTimeout": {
+    "description": "Error message when diagnosis times out"
+  },
+  "errorRateLimited": "Daily scan limit reached (maximum 10 scans per day). Please try again tomorrow.",
+  "@errorRateLimited": {
+    "description": "Error message when daily scan limit of 10 is reached"
+  },
+  "errorBadImage": "The leaf photo was not clear enough or unsupported. Please retake a clear photo.",
+  "@errorBadImage": {
+    "description": "Error message when image is corrupt, not leaf, or unclear"
+  },
+  "errorAiFailed": "Failed to analyze crop leaf. Please retry with a clearer photo.",
+  "@errorAiFailed": {
+    "description": "Error message when AI analysis fails"
+  },
+  "retakePhoto": "Retake Photo",
+  "@retakePhoto": {
+    "description": "Button to retake a leaf photo"
+  },
+  "backToHome": "Back to Home",
+  "@backToHome": {
+    "description": "Button to navigate back to home screen"
+  },
+  "submittingFeedback": "Submitting feedback...",
+  "@submittingFeedback": {
+    "description": "Snackbar text while feedback is being sent"
+  },
+  "feedbackSuccess": "Thank you for your feedback!",
+  "@feedbackSuccess": {
+    "description": "Success message when feedback is recorded"
+  },
+  "feedbackError": "Could not submit feedback.",
+  "@feedbackError": {
+    "description": "Error message when feedback submission fails"
   }
 }

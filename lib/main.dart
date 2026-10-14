@@ -1,13 +1,28 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'firebase_options.dart';
 import 'l10n/app_localizations.dart';
 import 'routes.dart';
+import 'services/auth_service.dart';
 import 'services/locale_provider.dart';
 import 'theme/app_theme.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase with platform-specific options
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    // On first launch, sign in anonymously and preserve the session
+    await AuthService.instance.initializeAuth();
+  } catch (e) {
+    debugPrint('Firebase initialization warning: $e');
+  }
+
   runApp(const PlantiiApp());
 }
 

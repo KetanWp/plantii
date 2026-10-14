@@ -559,6 +559,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Plantii v1.0.0'**
   String get profileVersion;
+
+  /// Error message when device is offline
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection. Please check your network and try again.'**
+  String get errorNoInternet;
+
+  /// Error message when diagnosis times out
+  ///
+  /// In en, this message translates to:
+  /// **'The diagnosis request timed out after 60 seconds. Please try again.'**
+  String get errorTimeout;
+
+  /// Error message when daily scan limit of 10 is reached
+  ///
+  /// In en, this message translates to:
+  /// **'Daily scan limit reached (maximum 10 scans per day). Please try again tomorrow.'**
+  String get errorRateLimited;
+
+  /// Error message when image is corrupt, not leaf, or unclear
+  ///
+  /// In en, this message translates to:
+  /// **'The leaf photo was not clear enough or unsupported. Please retake a clear photo.'**
+  String get errorBadImage;
+
+  /// Error message when AI analysis fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to analyze crop leaf. Please retry with a clearer photo.'**
+  String get errorAiFailed;
+
+  /// Button to retake a leaf photo
+  ///
+  /// In en, this message translates to:
+  /// **'Retake Photo'**
+  String get retakePhoto;
+
+  /// Button to navigate back to home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Home'**
+  String get backToHome;
+
+  /// Snackbar text while feedback is being sent
+  ///
+  /// In en, this message translates to:
+  /// **'Submitting feedback...'**
+  String get submittingFeedback;
+
+  /// Success message when feedback is recorded
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you for your feedback!'**
+  String get feedbackSuccess;
+
+  /// Error message when feedback submission fails
+  ///
+  /// In en, this message translates to:
+  /// **'Could not submit feedback.'**
+  String get feedbackError;
 }
 
 class _AppLocalizationsDelegate

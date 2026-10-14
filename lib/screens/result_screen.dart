@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../models/diagnosis.dart';
 import '../services/mock_diagnosis_service.dart';
+import '../services/real_diagnosis_service.dart';
 import '../services/tts_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/big_touch_button.dart';
@@ -14,8 +15,9 @@ import '../widgets/big_touch_button.dart';
 /// and interactive farmer assistance actions.
 class ResultScreen extends StatefulWidget {
   final TtsService? ttsService;
+  final RealDiagnosisService? diagnosisService;
 
-  const ResultScreen({super.key, this.ttsService});
+  const ResultScreen({super.key, this.ttsService, this.diagnosisService});
 
   @override
   State<ResultScreen> createState() => _ResultScreenState();
@@ -23,13 +25,16 @@ class ResultScreen extends StatefulWidget {
 
 class _ResultScreenState extends State<ResultScreen> {
   bool? _isHelpful; // null = unanswered, true = thumbs up, false = thumbs down
+  bool _isSubmittingFeedback = false;
   late final TtsService _ttsService;
+  late final RealDiagnosisService _diagnosisService;
 
   @override
   void initState() {
     super.initState();
     _ttsService = widget.ttsService ?? TtsService();
     _ttsService.isSpeakingNotifier.addListener(_onTtsSpeakingChanged);
+    _diagnosisService = widget.diagnosisService ?? RealDiagnosisService();
   }
 
   void _onTtsSpeakingChanged() {
@@ -176,7 +181,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     const SizedBox(height: 20),
 
                     // 10. "Was this helpful?" feedback section
-                    _buildHelpfulFeedback(l10n),
+                    _buildHelpfulFeedback(l10n, diagnosis, languageCode),
                     const SizedBox(height: 16),
                   ],
                 ),
@@ -540,8 +545,38 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
+  /// Sends feedback (thumbs up / thumbs down) to the /feedback endpoint
+  Future<void> _submitFeedback(
+    Diagnosis diagnosis,
+    bool helpful,
+    String languageCode,
+    AppLocalizations l10n,
+  ) async {
+    if (_isSubmittingFeedback) return;
+
+    setState(() {
+      _isHelpful = helpful;
+      _isSubmittingFeedback = true;
+    });
+
+    await _diagnosisService.sendFeedback(
+      scanId: diagnosis.id,
+      helpful: helpful,
+      language: languageCode,
+    );
+
+    if (!mounted) return;
+    setState(() {
+      _isSubmittingFeedback = false;
+    });
+  }
+
   /// Interactive thumbs up / down feedback widget
-  Widget _buildHelpfulFeedback(AppLocalizations l10n) {
+  Widget _buildHelpfulFeedback(
+    AppLocalizations l10n,
+    Diagnosis diagnosis,
+    String languageCode,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -565,9 +600,10 @@ class _ResultScreenState extends State<ResultScreen> {
             children: [
               // Thumbs up button (large touch target >= 56px)
               InkWell(
-                onTap: () {
-                  setState(() => _isHelpful = true);
-                },
+                key: const ValueKey('thumbs_up_button'),
+                onTap: _isSubmittingFeedback
+                    ? null
+                    : () => _submitFeedback(diagnosis, true, languageCode, l10n),
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -613,9 +649,10 @@ class _ResultScreenState extends State<ResultScreen> {
 
               // Thumbs down button (large touch target >= 56px)
               InkWell(
-                onTap: () {
-                  setState(() => _isHelpful = false);
-                },
+                key: const ValueKey('thumbs_down_button'),
+                onTap: _isSubmittingFeedback
+                    ? null
+                    : () => _submitFeedback(diagnosis, false, languageCode, l10n),
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),

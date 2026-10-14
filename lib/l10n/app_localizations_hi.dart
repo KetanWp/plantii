@@ -249,4 +249,39 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get profileVersion => 'Plantii v1.0.0';
+
+  @override
+  String get errorNoInternet =>
+      'इंटरनेट कनेक्शन नहीं है। कृपया अपना नेटवर्क जांचें और पुनः प्रयास करें।';
+
+  @override
+  String get errorTimeout =>
+      'अनुरोध का समय समाप्त हो गया (60 सेकंड)। कृपया पुनः प्रयास करें।';
+
+  @override
+  String get errorRateLimited =>
+      'दैनिक स्कैन सीमा समाप्त हो गई है (अधिकतम 10 स्कैन प्रतिदिन)। कृपया कल पुनः प्रयास करें।';
+
+  @override
+  String get errorBadImage =>
+      'पत्ती की फोटो स्पष्ट नहीं है या अमान्य है। कृपया स्पष्ट फोटो दोबारा लें।';
+
+  @override
+  String get errorAiFailed =>
+      'पौधे की जांच करने में समस्या आई। कृपया स्पष्ट फोटो के साथ पुनः प्रयास करें।';
+
+  @override
+  String get retakePhoto => 'फोटो दोबारा लें';
+
+  @override
+  String get backToHome => 'होम पर जाएं';
+
+  @override
+  String get submittingFeedback => 'प्रतिक्रिया भेजी जा रही है...';
+
+  @override
+  String get feedbackSuccess => 'आपकी प्रतिक्रिया के लिए धन्यवाद!';
+
+  @override
+  String get feedbackError => 'प्रतिक्रिया भेजने में समस्या आई।';
 }
