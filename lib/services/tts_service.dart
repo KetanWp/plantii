@@ -105,6 +105,17 @@ class TtsService {
     final bool isHindi = languageCode == 'hi';
     final String punct = isHindi ? '।' : '.';
     final String colon = ': ';
+
+    if (diagnosis.status == DiagnosisStatus.healthy) {
+      return isHindi
+          ? 'पौधा स्वस्थ है$punct ${diagnosis.description}'
+          : 'The plant is healthy$punct ${diagnosis.description}';
+    }
+
+    if (diagnosis.status == DiagnosisStatus.notAPlant || diagnosis.status == DiagnosisStatus.poorPhoto) {
+      return diagnosis.description;
+    }
+
     final buffer = StringBuffer();
 
     // 1. Disease Name

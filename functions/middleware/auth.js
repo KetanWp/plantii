@@ -39,6 +39,14 @@ async function verifyAuth(req, res, next) {
     });
   }
 
+  // In local emulator mode, accept test-token-<uid> for automated testing
+  if (process.env.FUNCTIONS_EMULATOR === 'true' && idToken.startsWith('test-token-')) {
+    const uid = idToken.replace('test-token-', '') || 'test_farmer_uid';
+    req.user = { uid, email: `${uid}@emulator.local` };
+    safeLogger.info(`Emulator test authenticated for user: ${uid}`);
+    return next();
+  }
+
   try {
     const decodedToken = await admin.auth().verifyIdToken(idToken);
     req.user = decodedToken;

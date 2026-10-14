@@ -2,17 +2,17 @@
  * Image Parsing and Validation Middleware
  *
  * Supports both base64 JSON payload and multipart/form-data.
- * Rejects images over 2 MB (2,097,152 bytes) or not JPEG / PNG.
+ * Rejects images over 1.5 MB (configurable via config/limits.js) or not JPEG / PNG.
+ * Checks real file signature (magic bytes) to ensure authenticity.
  * Returns code 'bad_image' with friendly bilingual message.
  */
 
 const Busboy = require('busboy');
+const limits = require('../config/limits');
 const { safeLogger } = require('./sanitizeLogs');
 
-const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2 MB
-
 /**
- * Checks magic bytes to verify JPEG or PNG format
+ * Checks real file signature (magic bytes) to verify JPEG or PNG format
  * @param {Buffer} buffer
  * @returns {'image/jpeg' | 'image/png' | null}
  */
@@ -64,6 +64,8 @@ function parseBase64ToBuffer(str) {
 function parseAndValidateImage(req, res, next) {
   const contentType = req.headers['content-type'] || '';
   const isHindi = req.body?.language === 'hi' || req.query?.language === 'hi';
+  const maxBytes = limits.maxImageBytes;
+  const maxMbStr = (maxBytes / (1024 * 1024)).toFixed(1).replace(/\.0$/, '');
 
   const badImageError = (msgEn, msgHi) => {
     return res.status(400).json({
@@ -81,7 +83,7 @@ function parseAndValidateImage(req, res, next) {
       busboy = Busboy({
         headers: req.headers,
         limits: {
-          fileSize: MAX_IMAGE_BYTES,
+          fileSize: maxBytes,
           files: 1,
         },
       });
@@ -91,17 +93,14 @@ function parseAndValidateImage(req, res, next) {
     }
 
     const fields = {};
-    let fileBufferChunks = [];
-    let fileMime = null;
+    const fileBufferChunks = [];
     let fileTruncated = false;
 
     busboy.on('field', (fieldname, val) => {
       fields[fieldname] = val;
     });
 
-    busboy.on('file', (fieldname, file, info) => {
-      fileMime = info.mimeType;
-
+    busboy.on('file', (fieldname, file) => {
       file.on('data', (data) => {
         fileBufferChunks.push(data);
       });
@@ -112,7 +111,6 @@ function parseAndValidateImage(req, res, next) {
     });
 
     busboy.on('finish', () => {
-      // Merge fields into req.body
       req.body = { ...req.body, ...fields };
       const currentIsHindi = req.body.language === 'hi';
 
@@ -121,15 +119,14 @@ function parseAndValidateImage(req, res, next) {
           error: {
             code: 'bad_image',
             message: currentIsHindi
-              ? 'छवि का आकार 2MB से अधिक है। कृपया 2MB से छोटी छवि चुनें।'
-              : 'Image size exceeds the 2 MB limit. Please select a smaller image.',
+              ? `छवि का आकार ${maxMbStr}MB से अधिक है। कृपया ${maxMbStr}MB से छोटी छवि चुनें।`
+              : `Image size exceeds the ${maxMbStr} MB limit. Please select a smaller image.`,
           },
         });
       }
 
       let buffer = Buffer.concat(fileBufferChunks);
 
-      // If image came as a form text field instead of file
       if (buffer.length === 0 && fields.image) {
         buffer = parseBase64ToBuffer(fields.image);
       }
@@ -145,19 +142,19 @@ function parseAndValidateImage(req, res, next) {
         });
       }
 
-      if (buffer.length > MAX_IMAGE_BYTES) {
+      if (buffer.length > maxBytes) {
         return res.status(400).json({
           error: {
             code: 'bad_image',
             message: currentIsHindi
-              ? 'छवि का आकार 2MB से अधिक है। कृपया 2MB से छोटी छवि चुनें।'
-              : 'Image size exceeds the 2 MB limit. Please select a smaller image.',
+              ? `छवि का आकार ${maxMbStr}MB से अधिक है। कृपया ${maxMbStr}MB से छोटी छवि चुनें।`
+              : `Image size exceeds the ${maxMbStr} MB limit. Please select a smaller image.`,
           },
         });
       }
 
       const detectedMime = detectImageMimeType(buffer);
-      if (!detectedMime) {
+      if (!detectedMime || !limits.allowedMimeTypes.includes(detectedMime)) {
         return res.status(400).json({
           error: {
             code: 'bad_image',
@@ -182,7 +179,6 @@ function parseAndValidateImage(req, res, next) {
       return badImageError('Error processing image upload.', 'छवि अपलोड संसाधित करने में त्रुटि।');
     });
 
-    // Cloud Functions 2nd gen passes rawBody as Buffer on req.rawBody
     if (req.rawBody) {
       busboy.end(req.rawBody);
     } else {
@@ -208,19 +204,19 @@ function parseAndValidateImage(req, res, next) {
     );
   }
 
-  if (buffer.length > MAX_IMAGE_BYTES) {
+  if (buffer.length > maxBytes) {
     return res.status(400).json({
       error: {
         code: 'bad_image',
         message: isHindi
-          ? 'छवि का आकार 2MB से अधिक है। कृपया 2MB से छोटी छवि चुनें।'
-          : 'Image size exceeds the 2 MB limit. Please select a smaller image.',
+          ? `छवि का आकार ${maxMbStr}MB से अधिक है। कृपया ${maxMbStr}MB से छोटी छवि चुनें।`
+          : `Image size exceeds the ${maxMbStr} MB limit. Please select a smaller image.`,
       },
     });
   }
 
   const detectedMime = detectImageMimeType(buffer);
-  if (!detectedMime) {
+  if (!detectedMime || !limits.allowedMimeTypes.includes(detectedMime)) {
     return badImageError(
       'Only JPEG and PNG formats are supported. Please upload a valid image.',
       'केवल JPEG और PNG प्रारूप समर्थित हैं। कृपया एक वैध छवि अपलोड करें।'
@@ -239,5 +235,6 @@ function parseAndValidateImage(req, res, next) {
 module.exports = {
   parseAndValidateImage,
   detectImageMimeType,
-  MAX_IMAGE_BYTES,
+  parseBase64ToBuffer,
+  MAX_IMAGE_BYTES: limits.maxImageBytes,
 };

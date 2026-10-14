@@ -273,6 +273,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
 
     switch (error.type) {
       case DiagnosisErrorType.noInternet:
+      case DiagnosisErrorType.networkError:
         errorIcon = Icons.wifi_off_rounded;
         iconColor = AppTheme.severityHigh;
         titleText = l10n.errorNoInternet;
@@ -295,11 +296,35 @@ class _LoadingScreenState extends State<LoadingScreen> {
         showHomeButton = true;
         break;
 
+      case DiagnosisErrorType.serviceBusy:
+      case DiagnosisErrorType.quotaExceeded:
+        errorIcon = Icons.cloud_off_rounded;
+        iconColor = AppTheme.severityMedium;
+        titleText = languageCode == 'hi' ? 'सर्वर व्यस्त है' : 'Service Busy';
+        showRetryButton = true;
+        showHomeButton = true;
+        break;
+
       case DiagnosisErrorType.badImage:
         errorIcon = Icons.broken_image_rounded;
         iconColor = AppTheme.severityHigh;
         titleText = l10n.errorBadImage;
         showRetakeButton = true;
+        break;
+
+      case DiagnosisErrorType.safetyBlock:
+        errorIcon = Icons.security_rounded;
+        iconColor = AppTheme.severityHigh;
+        titleText = languageCode == 'hi' ? 'सुरक्षा अवरोध' : 'Safety Notice';
+        showRetakeButton = true;
+        showHomeButton = true;
+        break;
+
+      case DiagnosisErrorType.aiAuthError:
+        errorIcon = Icons.vpn_key_off_rounded;
+        iconColor = AppTheme.severityHigh;
+        titleText = languageCode == 'hi' ? 'प्रमाणीकरण त्रुटि' : 'Auth Error';
+        showHomeButton = true;
         break;
 
       case DiagnosisErrorType.aiFailed:

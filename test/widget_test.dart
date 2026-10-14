@@ -486,4 +486,251 @@ void main() {
       expect(find.text('Late blight rot'), findsOneWidget);
     });
   });
+
+  group('Diagnosis Status & Screen Mode Tests', () {
+    test('Diagnosis model correctly serializes and deserializes all 4 status categories', () {
+      // 1. Healthy plant
+      final healthyMap = {
+        'id': 'diag_healthy_1',
+        'cropId': 'tomato',
+        'status': 'healthy',
+        'confidence': 'very_likely',
+        'confidenceLevel': 'Very Likely',
+        'description': 'Plant looks vibrant and healthy.',
+        'immediateActions': <String>[],
+        'organicTreatments': <String>[],
+        'chemicalTreatments': <String>[],
+        'safetyNote': '',
+        'preventionTips': ['Ensure 6-8 hours of sunlight'],
+      };
+      final healthyDiag = Diagnosis.fromMap(healthyMap);
+      expect(healthyDiag.status, DiagnosisStatus.healthy);
+      expect(healthyDiag.isHealthy, isTrue);
+      expect(healthyDiag.isDiseased, isFalse);
+      expect(healthyDiag.confidence, DiagnosisConfidence.veryLikely);
+      expect(healthyDiag.organicTreatments, isEmpty);
+      expect(healthyDiag.toMap()['status'], 'healthy');
+
+      // 2. Not a plant
+      final notPlantMap = {
+        'id': 'diag_not_plant_1',
+        'cropId': 'potato',
+        'status': 'not_a_plant',
+        'confidence': 'possible',
+        'confidenceLevel': 'Possible',
+        'description': 'No plant detected in frame.',
+        'immediateActions': <String>[],
+        'organicTreatments': <String>[],
+        'chemicalTreatments': <String>[],
+        'safetyNote': '',
+        'preventionTips': <String>[],
+      };
+      final notPlantDiag = Diagnosis.fromMap(notPlantMap);
+      expect(notPlantDiag.status, DiagnosisStatus.notAPlant);
+      expect(notPlantDiag.isNotAPlant, isTrue);
+      expect(notPlantDiag.confidence, DiagnosisConfidence.possible);
+      expect(notPlantDiag.toMap()['status'], 'not_a_plant');
+
+      // 3. Poor photo
+      final poorPhotoMap = {
+        'id': 'diag_poor_photo_1',
+        'cropId': 'rice',
+        'status': 'poor_photo',
+        'confidence': 'possible',
+        'confidenceLevel': 'Possible',
+        'description': 'Photo is blurry or out of focus.',
+        'immediateActions': <String>[],
+        'organicTreatments': <String>[],
+        'chemicalTreatments': <String>[],
+        'safetyNote': '',
+        'preventionTips': <String>[],
+      };
+      final poorPhotoDiag = Diagnosis.fromMap(poorPhotoMap);
+      expect(poorPhotoDiag.status, DiagnosisStatus.poorPhoto);
+      expect(poorPhotoDiag.isPoorPhoto, isTrue);
+      expect(poorPhotoDiag.toMap()['status'], 'poor_photo');
+
+      // 4. Diseased plant
+      final diseasedMap = {
+        'id': 'diag_diseased_1',
+        'cropId': 'tomato',
+        'status': 'diseased',
+        'diseaseName': 'Early Blight',
+        'scientificName': 'Alternaria solani',
+        'severity': 'moderate',
+        'confidence': 'likely',
+        'confidenceLevel': 'Likely',
+        'description': 'Concentric brown rings on leaves.',
+        'immediateActions': ['Remove lower leaves'],
+        'organicTreatments': ['Neem oil'],
+        'chemicalTreatments': ['Mancozeb'],
+        'safetyNote': 'Wear gloves',
+        'preventionTips': ['Crop rotation'],
+      };
+      final diseasedDiag = Diagnosis.fromMap(diseasedMap);
+      expect(diseasedDiag.status, DiagnosisStatus.diseased);
+      expect(diseasedDiag.isDiseased, isTrue);
+      expect(diseasedDiag.confidence, DiagnosisConfidence.likely);
+      expect(diseasedDiag.severity, DiagnosisSeverity.moderate);
+      expect(diseasedDiag.organicTreatments, isNotEmpty);
+      expect(diseasedDiag.toMap()['status'], 'diseased');
+    });
+
+    testWidgets('ResultScreen renders Healthy view without treatments or severity',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      const healthyDiag = Diagnosis(
+        id: 'h1',
+        cropId: 'tomato',
+        status: DiagnosisStatus.healthy,
+        diseaseName: 'Healthy Plant',
+        scientificName: 'Solanum lycopersicum',
+        severity: DiagnosisSeverity.none,
+        confidence: DiagnosisConfidence.veryLikely,
+        confidenceLevel: 'Very Likely',
+        description: 'Plant is thriving with strong green foliage.',
+        immediateActions: [],
+        organicTreatments: [],
+        chemicalTreatments: [],
+        safetyNote: '',
+        preventionTips: ['Maintain regular watering at soil level.'],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.lightTheme,
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routes: {
+            '/': (context) => const SizedBox(),
+            '/result': (context) => const ResultScreen(),
+          },
+          initialRoute: '/',
+        ),
+      );
+
+      // Push ResultScreen with healthy diagnosis argument
+      final navKey = tester.element(find.byType(SizedBox)).findAncestorStateOfType<NavigatorState>()!;
+      navKey.pushNamed('/result', arguments: {'diagnosis': healthyDiag});
+      await tester.pumpAndSettle();
+
+      // Check Healthy UI elements
+      expect(find.text('Healthy Plant'), findsOneWidget);
+      expect(find.text('No signs of disease or pest infestation detected'), findsOneWidget);
+      expect(find.text('Routine Care Advice'), findsOneWidget);
+      expect(find.text('Scan Another Leaf'), findsOneWidget);
+
+      // Verify diseased sections are completely absent
+      expect(find.text('Organic Treatment'), findsNothing);
+      expect(find.text('Chemical Treatment'), findsNothing);
+      expect(find.text('What to do now'), findsNothing);
+      expect(find.text('Safety Note'), findsNothing);
+    });
+
+    testWidgets('ResultScreen renders Poor Photo view with retake instructions',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      const poorPhotoDiag = Diagnosis(
+        id: 'pp1',
+        cropId: 'tomato',
+        status: DiagnosisStatus.poorPhoto,
+        diseaseName: 'Photo Not Clear',
+        scientificName: '',
+        severity: DiagnosisSeverity.none,
+        confidence: DiagnosisConfidence.possible,
+        confidenceLevel: 'Possible',
+        description: 'Image was blurry or too far away for reliable disease diagnosis.',
+        immediateActions: [],
+        organicTreatments: [],
+        chemicalTreatments: [],
+        safetyNote: '',
+        preventionTips: [],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.lightTheme,
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routes: {
+            '/': (context) => const SizedBox(),
+            '/result': (context) => const ResultScreen(),
+          },
+          initialRoute: '/',
+        ),
+      );
+
+      final navKey = tester.element(find.byType(SizedBox)).findAncestorStateOfType<NavigatorState>()!;
+      navKey.pushNamed('/result', arguments: {'diagnosis': poorPhotoDiag});
+      await tester.pumpAndSettle();
+
+      // Check Poor Photo UI elements
+      expect(find.text('Photo Not Clear'), findsOneWidget);
+      expect(find.text('Photography Guidelines'), findsOneWidget);
+      expect(find.text('Retake Photo'), findsOneWidget);
+
+      // Verify diseased sections are absent
+      expect(find.text('Organic Treatment'), findsNothing);
+      expect(find.text('Chemical Treatment'), findsNothing);
+    });
+
+    testWidgets('ResultScreen renders Not a Plant view with retake button',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      const notPlantDiag = Diagnosis(
+        id: 'np1',
+        cropId: 'tomato',
+        status: DiagnosisStatus.notAPlant,
+        diseaseName: 'Not a Plant',
+        scientificName: '',
+        severity: DiagnosisSeverity.none,
+        confidence: DiagnosisConfidence.possible,
+        confidenceLevel: 'Possible',
+        description: 'The uploaded image does not appear to contain a crop leaf or plant.',
+        immediateActions: [],
+        organicTreatments: [],
+        chemicalTreatments: [],
+        safetyNote: '',
+        preventionTips: [],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.lightTheme,
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routes: {
+            '/': (context) => const SizedBox(),
+            '/result': (context) => const ResultScreen(),
+          },
+          initialRoute: '/',
+        ),
+      );
+
+      final navKey = tester.element(find.byType(SizedBox)).findAncestorStateOfType<NavigatorState>()!;
+      navKey.pushNamed('/result', arguments: {'diagnosis': notPlantDiag});
+      await tester.pumpAndSettle();
+
+      // Check Not a Plant UI elements
+      expect(find.text('Not a Plant'), findsOneWidget);
+      expect(find.text('Retake Photo'), findsOneWidget);
+      expect(find.text('Organic Treatment'), findsNothing);
+    });
+  });
 }
+

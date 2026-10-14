@@ -146,6 +146,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       DiagnosisSeverity.mild => (AppTheme.severityLow, l10n.severityMild),
       DiagnosisSeverity.moderate => (AppTheme.severityMedium, l10n.severityModerate),
       DiagnosisSeverity.severe => (AppTheme.severityHigh, l10n.severitySevere),
+      DiagnosisSeverity.none => (AppTheme.severityLow, '—'),
     };
 
     final formattedDate = _formatDate(record.scannedAt);

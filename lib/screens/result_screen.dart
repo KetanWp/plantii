@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
@@ -62,9 +63,45 @@ class _ResultScreenState extends State<ResultScreen> {
 
     final String? imagePath = args?['imagePath'] as String?;
     final String languageCode = Localizations.localeOf(context).languageCode;
+    final Diagnosis? passedDiagnosis = args?['diagnosis'] as Diagnosis?;
 
-    // Use passed diagnosis or fallback to mock tomato early blight for standalone runs
-    final Diagnosis diagnosis = args?['diagnosis'] as Diagnosis? ??
+    // In production release builds, never fall back to mock data
+    if (passedDiagnosis == null) {
+      if (!kDebugMode) {
+        return Scaffold(
+          backgroundColor: AppTheme.earthSand,
+          appBar: AppBar(title: Text(l10n.resultTitle)),
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 64, color: AppTheme.severitySevere),
+                  const SizedBox(height: 16),
+                  Text(
+                    languageCode == 'hi'
+                        ? 'कोई जांच परिणाम उपलब्ध नहीं है। कृपया नया स्कैन करें।'
+                        : 'No diagnosis result available. Please start a new scan.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 24),
+                  BigTouchButton(
+                    icon: Icons.home,
+                    label: languageCode == 'hi' ? 'होम पर वापस जाएं' : 'Return to Home',
+                    onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
+    }
+
+    // Fallback strictly for debug/test mode when running widget harnesses without route args
+    final Diagnosis diagnosis = passedDiagnosis ??
         (languageCode == 'hi'
             ? const MockDiagnosisService()
                 .getDiagnosisSyncFallback('tomato', true)
@@ -118,71 +155,18 @@ class _ResultScreenState extends State<ResultScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // 1. User's photo
+                    // User's captured photo
                     _buildPhotoCard(imagePath),
                     const SizedBox(height: 16),
 
-                    // 2. Disease name (large) & Scientific name
-                    _buildDiseaseHeader(diagnosis),
-                    const SizedBox(height: 14),
-
-                    // 3. Traffic-light severity & Confidence in words
-                    _buildSeverityAndConfidence(context, diagnosis, l10n),
-                    const SizedBox(height: 20),
-
-                    // 4. Card: What it is
-                    _buildCardSection(
-                      title: l10n.whatItIs,
-                      icon: Icons.info_outline,
-                      iconColor: AppTheme.primaryGreen,
-                      content: Text(
-                        diagnosis.description,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          height: 1.5,
-                          color: AppTheme.highContrastDark,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // 5. Card: What to do now (Immediate actions)
-                    _buildCardSection(
-                      title: l10n.whatToDoNow,
-                      icon: Icons.bolt,
-                      iconColor: AppTheme.severityMedium,
-                      content: _buildBulletList(diagnosis.immediateActions),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // 6. Split Treatment: Organic vs Chemical
-                    _buildSplitTreatmentSection(diagnosis, l10n),
-                    const SizedBox(height: 14),
-
-                    // 7. Safety Note
-                    _buildSafetyNoteCard(diagnosis.safetyNote, l10n),
-                    const SizedBox(height: 14),
-
-                    // 8. Card: Prevention
-                    _buildCardSection(
-                      title: l10n.preventionTips,
-                      icon: Icons.verified_user_outlined,
-                      iconColor: AppTheme.primaryGreen,
-                      content: _buildBulletList(diagnosis.preventionTips),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // 9. "Ask an Expert" Button
-                    BigTouchButton(
-                      icon: Icons.support_agent,
-                      label: l10n.askAnExpert,
-                      onPressed: () => _showExpertDialog(context, l10n),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // 10. "Was this helpful?" feedback section
-                    _buildHelpfulFeedback(l10n, diagnosis, languageCode),
-                    const SizedBox(height: 16),
+                    // Render content according to Diagnosis status
+                    if (diagnosis.status == DiagnosisStatus.healthy)
+                      ..._buildHealthyContent(context, diagnosis, languageCode, l10n)
+                    else if (diagnosis.status == DiagnosisStatus.poorPhoto ||
+                        diagnosis.status == DiagnosisStatus.notAPlant)
+                      ..._buildRetakeContent(context, diagnosis, languageCode, l10n)
+                    else
+                      ..._buildDiseasedContent(context, diagnosis, languageCode, l10n),
                   ],
                 ),
               ),
@@ -193,6 +177,312 @@ class _ResultScreenState extends State<ResultScreen> {
         ),
       ),
     );
+  }
+
+  /// Healthy plant screen content
+  List<Widget> _buildHealthyContent(
+    BuildContext context,
+    Diagnosis diagnosis,
+    String languageCode,
+    AppLocalizations l10n,
+  ) {
+    final isHindi = languageCode == 'hi';
+    return [
+      Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE8F5E9),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppTheme.primaryGreen, width: 2),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 6,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            const Icon(
+              Icons.check_circle_rounded,
+              color: AppTheme.primaryGreen,
+              size: 56,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              isHindi ? 'स्वस्थ पौधा' : 'Healthy Plant',
+              style: const TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryGreen,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              isHindi
+                  ? 'फसल में कोई बीमारी या कीट के लक्षण नहीं दिखे'
+                  : 'No signs of disease or pest infestation detected',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: AppTheme.highContrastDark,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.primaryGreen.withValues(alpha: 0.4)),
+              ),
+              child: Text(
+                '${isHindi ? "सटीकता" : "Confidence"}: ${diagnosis.confidence.displayLabel(languageCode: languageCode)}',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryGreen,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 16),
+      _buildCardSection(
+        title: isHindi ? 'देखभाल एवं सुझाव' : 'Routine Care Advice',
+        icon: Icons.spa_outlined,
+        iconColor: AppTheme.primaryGreen,
+        content: Text(
+          diagnosis.description,
+          style: const TextStyle(
+            fontSize: 16,
+            height: 1.5,
+            color: AppTheme.highContrastDark,
+          ),
+        ),
+      ),
+      const SizedBox(height: 24),
+      BigTouchButton(
+        icon: Icons.camera_alt,
+        label: isHindi ? 'दूसरी पत्ती स्कैन करें' : 'Scan Another Leaf',
+        onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil('/camera', (r) => false),
+      ),
+      const SizedBox(height: 14),
+      BigTouchButton(
+        icon: Icons.home,
+        label: isHindi ? 'होम पर वापस जाएं' : 'Return to Home',
+        onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil('/', (r) => false),
+      ),
+      const SizedBox(height: 16),
+    ];
+  }
+
+  /// Retake photo screen content (for poor photo or not a plant)
+  List<Widget> _buildRetakeContent(
+    BuildContext context,
+    Diagnosis diagnosis,
+    String languageCode,
+    AppLocalizations l10n,
+  ) {
+    final isHindi = languageCode == 'hi';
+    final bool isNotPlant = diagnosis.status == DiagnosisStatus.notAPlant;
+
+    final String title = isNotPlant
+        ? (isHindi ? 'पौधा नहीं दिखा' : 'Not a Plant')
+        : (isHindi ? 'फोटो स्पष्ट नहीं है' : 'Photo Not Clear');
+
+    final String subtitle = isNotPlant
+        ? (isHindi
+            ? 'तस्वीर में फसल या पत्ती की पहचान नहीं हो सकी'
+            : 'No crop foliage or plant recognized in this image')
+        : (isHindi
+            ? 'फोटो धुंधली या अंधेरी होने के कारण जांच संभव नहीं है'
+            : 'Image is too blurry or dark for accurate diagnosis');
+
+    final List<String> tips = isNotPlant
+        ? [
+            isHindi ? 'केवल फसल या पौधे की पत्ती को कैमरे में रखें' : 'Keep only the crop leaf in the frame',
+            isHindi ? 'इंसान, जमीन या अन्य सामान की फोटो न लें' : 'Avoid photographing people, ground, or objects',
+            isHindi ? 'पत्ती को केंद्र में रखकर स्पष्ट फोटो लें' : 'Keep the leaf centered in clear focus',
+          ]
+        : [
+            isHindi ? 'अच्छी प्राकृतिक रोशनी में फोटो लें' : 'Take photo under good natural daylight',
+            isHindi ? 'कैमरे को पत्ती के करीब (15-20 सेमी) स्थिर रखें' : 'Hold camera steady and close (15-20 cm)',
+            isHindi ? 'स्क्रीन पर पत्ती को छूकर फोकस करें' : 'Tap on the leaf to lock focus before snapping',
+          ];
+
+    return [
+      Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF3E0),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.orange.shade800, width: 2),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 6,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Icon(
+              isNotPlant ? Icons.hide_image_outlined : Icons.blur_on_rounded,
+              color: Colors.orange.shade900,
+              size: 56,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: Colors.orange.shade900,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              subtitle,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: AppTheme.highContrastDark,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 16),
+      _buildCardSection(
+        title: isHindi ? 'मार्गदर्शन एवं टिप्स' : 'Photography Guidelines',
+        icon: Icons.lightbulb_outline,
+        iconColor: Colors.orange.shade900,
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              diagnosis.description,
+              style: const TextStyle(
+                fontSize: 16,
+                height: 1.5,
+                color: AppTheme.highContrastDark,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ...tips.map(
+              (tip) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('• ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryGreen)),
+                    Expanded(
+                      child: Text(
+                        tip,
+                        style: const TextStyle(fontSize: 15, height: 1.4, color: AppTheme.highContrastDark),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 24),
+      BigTouchButton(
+        icon: Icons.camera_alt,
+        label: isHindi ? 'फोटो दोबारा लें' : 'Retake Photo',
+        onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil('/camera', (r) => false),
+      ),
+      const SizedBox(height: 14),
+      BigTouchButton(
+        icon: Icons.home,
+        label: isHindi ? 'होम पर वापस जाएं' : 'Return to Home',
+        onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil('/', (r) => false),
+      ),
+      const SizedBox(height: 16),
+    ];
+  }
+
+  /// Diseased plant screen content (shows severity, treatments, safety, and actions)
+  List<Widget> _buildDiseasedContent(
+    BuildContext context,
+    Diagnosis diagnosis,
+    String languageCode,
+    AppLocalizations l10n,
+  ) {
+    return [
+      // Disease name & Scientific name
+      _buildDiseaseHeader(diagnosis),
+      const SizedBox(height: 14),
+
+      // Traffic-light severity & Confidence in words
+      _buildSeverityAndConfidence(context, diagnosis, l10n),
+      const SizedBox(height: 20),
+
+      // Card: What it is
+      _buildCardSection(
+        title: l10n.whatItIs,
+        icon: Icons.info_outline,
+        iconColor: AppTheme.primaryGreen,
+        content: Text(
+          diagnosis.description,
+          style: const TextStyle(
+            fontSize: 16,
+            height: 1.5,
+            color: AppTheme.highContrastDark,
+          ),
+        ),
+      ),
+      const SizedBox(height: 14),
+
+      // Card: What to do now (Immediate actions)
+      _buildCardSection(
+        title: l10n.whatToDoNow,
+        icon: Icons.bolt,
+        iconColor: AppTheme.severityMedium,
+        content: _buildBulletList(diagnosis.immediateActions),
+      ),
+      const SizedBox(height: 14),
+
+      // Split Treatment: Organic vs Chemical
+      _buildSplitTreatmentSection(diagnosis, l10n),
+      const SizedBox(height: 14),
+
+      // Safety Note
+      _buildSafetyNoteCard(diagnosis.safetyNote, l10n),
+      const SizedBox(height: 14),
+
+      // Card: Prevention
+      _buildCardSection(
+        title: l10n.preventionTips,
+        icon: Icons.verified_user_outlined,
+        iconColor: AppTheme.primaryGreen,
+        content: _buildBulletList(diagnosis.preventionTips),
+      ),
+      const SizedBox(height: 24),
+
+      // "Ask an Expert" Button
+      BigTouchButton(
+        icon: Icons.support_agent,
+        label: l10n.askAnExpert,
+        onPressed: () => _showExpertDialog(context, l10n),
+      ),
+      const SizedBox(height: 20),
+
+      // "Was this helpful?" feedback section
+      _buildHelpfulFeedback(l10n, diagnosis, languageCode),
+      const SizedBox(height: 16),
+    ];
   }
 
   /// Displays the user's captured or selected photo
@@ -272,6 +562,7 @@ class _ResultScreenState extends State<ResultScreen> {
       DiagnosisSeverity.mild => (AppTheme.severityLow, l10n.severityMild),
       DiagnosisSeverity.moderate => (AppTheme.severityMedium, l10n.severityModerate),
       DiagnosisSeverity.severe => (AppTheme.severityHigh, l10n.severitySevere),
+      DiagnosisSeverity.none => (AppTheme.severityLow, ''),
     };
 
     return Container(
@@ -752,6 +1043,7 @@ class _ResultScreenState extends State<ResultScreen> {
       DiagnosisSeverity.mild => l10n.severityMild,
       DiagnosisSeverity.moderate => l10n.severityModerate,
       DiagnosisSeverity.severe => l10n.severitySevere,
+      DiagnosisSeverity.none => '',
     };
 
     final result = await _ttsService.speakDiagnosis(

@@ -10,10 +10,15 @@ import 'auth_service.dart';
 /// Distinct error categories for diagnosis failures
 enum DiagnosisErrorType {
   noInternet,
+  networkError,
   timeout,
   rateLimited,
+  serviceBusy,
   badImage,
   aiFailed,
+  quotaExceeded,
+  safetyBlock,
+  aiAuthError,
   unauthorized,
   unknown,
 }
@@ -49,15 +54,15 @@ class DiagnosisException implements Exception {
 class RealDiagnosisService {
   /// Default production Cloud Functions endpoint URL
   static const String defaultProdUrl =
-      'https://us-central1-crop-doctor-app.cloudfunctions.net/api';
+      'https://asia-south1-plantii-4fb2e.cloudfunctions.net/api';
 
   /// Default Android Emulator host URL
   static const String defaultAndroidEmulatorUrl =
-      'http://10.0.2.2:5001/crop-doctor-app/us-central1/api';
+      'http://10.0.2.2:5001/plantii-4fb2e/asia-south1/api';
 
   /// Default Localhost URL (iOS simulator, Web, macOS, Windows)
   static const String defaultLocalhostUrl =
-      'http://127.0.0.1:5001/crop-doctor-app/us-central1/api';
+      'http://127.0.0.1:5001/plantii-4fb2e/asia-south1/api';
 
   /// Allows global override of the base API URL (e.g. for testing or emulator mode)
   static String? customBaseUrl;
@@ -203,8 +208,26 @@ class RealDiagnosisService {
     if (response.statusCode == 429 || serverErrorCode == 'rate_limited') {
       throw DiagnosisException(
         type: DiagnosisErrorType.rateLimited,
-        messageEn: 'Daily scan limit reached (maximum 10 scans per day). Please try again tomorrow.',
-        messageHi: 'दैनिक स्कैन सीमा समाप्त हो गई है (अधिकतम 10 स्कैन प्रतिदिन)। कृपया कल पुनः प्रयास करें।',
+        messageEn: 'Daily scan limit reached. Please try again tomorrow.',
+        messageHi: 'दैनिक स्कैन सीमा समाप्त हो गई है। कृपया कल पुनः प्रयास करें।',
+        serverMessage: serverErrorMessage,
+      );
+    }
+
+    if (serverErrorCode == 'quota_exceeded') {
+      throw DiagnosisException(
+        type: DiagnosisErrorType.quotaExceeded,
+        messageEn: 'AI diagnosis service capacity reached. Please try again shortly.',
+        messageHi: 'एआई सेवा की दैनिक सीमा पूरी हो गई है। कृपया कुछ समय बाद पुनः प्रयास करें।',
+        serverMessage: serverErrorMessage,
+      );
+    }
+
+    if (response.statusCode == 503 || serverErrorCode == 'service_busy') {
+      throw DiagnosisException(
+        type: DiagnosisErrorType.serviceBusy,
+        messageEn: 'The service is temporarily busy due to high demand. Please try again in a moment.',
+        messageHi: 'सर्वर पर वर्तमान में अत्यधिक ट्रैफ़िक है। कृपया कुछ समय बाद पुनः प्रयास करें।',
         serverMessage: serverErrorMessage,
       );
     }
@@ -212,8 +235,17 @@ class RealDiagnosisService {
     if (response.statusCode == 504 || serverErrorCode == 'timeout') {
       throw DiagnosisException(
         type: DiagnosisErrorType.timeout,
-        messageEn: 'The diagnosis request timed out after 60 seconds. Please try again.',
-        messageHi: 'अनुरोध का समय समाप्त हो गया (60 सेकंड)। कृपया पुनः प्रयास करें।',
+        messageEn: 'The diagnosis request timed out after 45 seconds. Please try again.',
+        messageHi: 'अनुरोध का समय समाप्त हो गया। कृपया पुनः प्रयास करें।',
+        serverMessage: serverErrorMessage,
+      );
+    }
+
+    if (serverErrorCode == 'safety_block') {
+      throw DiagnosisException(
+        type: DiagnosisErrorType.safetyBlock,
+        messageEn: 'The photo could not be processed due to safety guidelines. Please take a clear photo of the plant leaf.',
+        messageHi: 'सुरक्षा नियमों के कारण फोटो संसाधित नहीं हो सकी। कृपया पत्ती की स्पष्ट फोटो लें।',
         serverMessage: serverErrorMessage,
       );
     }
@@ -223,6 +255,24 @@ class RealDiagnosisService {
         type: DiagnosisErrorType.badImage,
         messageEn: 'The leaf photo was not clear enough or unsupported. Please retake a clear photo.',
         messageHi: 'पत्ती की फोटो स्पष्ट नहीं है या अमान्य है। कृपया स्पष्ट फोटो दोबारा लें।',
+        serverMessage: serverErrorMessage,
+      );
+    }
+
+    if (serverErrorCode == 'ai_auth_error') {
+      throw DiagnosisException(
+        type: DiagnosisErrorType.aiAuthError,
+        messageEn: 'Internal AI authentication failed. Please contact support.',
+        messageHi: 'एआई सेवा प्रमाणीकरण विफल रहा। कृपया सहायता से संपर्क करें।',
+        serverMessage: serverErrorMessage,
+      );
+    }
+
+    if (serverErrorCode == 'network_error') {
+      throw DiagnosisException(
+        type: DiagnosisErrorType.networkError,
+        messageEn: 'Network communication with AI service failed. Please check connection.',
+        messageHi: 'एआई सेवा के साथ नेटवर्क संचार विफल रहा। कृपया अपना कनेक्शन जांचें।',
         serverMessage: serverErrorMessage,
       );
     }

@@ -41,46 +41,48 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyA_dummyApiKeyForWeb1234567890abcdef',
-    appId: '1:123456789012:web:abcdef1234567890abcdef',
-    messagingSenderId: '123456789012',
-    projectId: 'crop-doctor-app',
-    authDomain: 'crop-doctor-app.firebaseapp.com',
-    storageBucket: 'crop-doctor-app.appspot.com',
+    apiKey: 'AIzaSyD8IligsSJ96Jd31yuieJhFKDqVEGEE4ww',
+    appId: '1:987660316703:web:e5f7d07c6a4d6763c3652a',
+    messagingSenderId: '987660316703',
+    projectId: 'plantii-4fb2e',
+    authDomain: 'plantii-4fb2e.firebaseapp.com',
+    storageBucket: 'plantii-4fb2e.firebasestorage.app',
+    measurementId: 'G-WV5SMBB9M5',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyA_dummyApiKeyForAndroid1234567890abc',
-    appId: '1:123456789012:android:abcdef1234567890abcdef',
-    messagingSenderId: '123456789012',
-    projectId: 'crop-doctor-app',
-    storageBucket: 'crop-doctor-app.appspot.com',
+    apiKey: 'AIzaSyDkHwkU9eyadhFcM1J7EKofQcq_MQNLgws',
+    appId: '1:987660316703:android:63dd0809ce148e6dc3652a',
+    messagingSenderId: '987660316703',
+    projectId: 'plantii-4fb2e',
+    storageBucket: 'plantii-4fb2e.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyA_dummyApiKeyForIos1234567890abcdef',
-    appId: '1:123456789012:ios:abcdef1234567890abcdef',
-    messagingSenderId: '123456789012',
-    projectId: 'crop-doctor-app',
-    storageBucket: 'crop-doctor-app.appspot.com',
+    apiKey: 'AIzaSyBosmZ-TqAHwDDZsQul1IFDG61SW-OlQRI',
+    appId: '1:987660316703:ios:3baf46b0552ed86ac3652a',
+    messagingSenderId: '987660316703',
+    projectId: 'plantii-4fb2e',
+    storageBucket: 'plantii-4fb2e.firebasestorage.app',
     iosBundleId: 'com.example.cropDoctor',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyA_dummyApiKeyForMac1234567890abcdef',
-    appId: '1:123456789012:ios:abcdef1234567890abcdef',
-    messagingSenderId: '123456789012',
-    projectId: 'crop-doctor-app',
-    storageBucket: 'crop-doctor-app.appspot.com',
+    apiKey: 'AIzaSyBosmZ-TqAHwDDZsQul1IFDG61SW-OlQRI',
+    appId: '1:987660316703:ios:3baf46b0552ed86ac3652a',
+    messagingSenderId: '987660316703',
+    projectId: 'plantii-4fb2e',
+    storageBucket: 'plantii-4fb2e.firebasestorage.app',
     iosBundleId: 'com.example.cropDoctor',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyA_dummyApiKeyForWindows1234567890abc',
-    appId: '1:123456789012:web:abcdef1234567890abcdef',
-    messagingSenderId: '123456789012',
-    projectId: 'crop-doctor-app',
-    authDomain: 'crop-doctor-app.firebaseapp.com',
-    storageBucket: 'crop-doctor-app.appspot.com',
+    apiKey: 'AIzaSyD8IligsSJ96Jd31yuieJhFKDqVEGEE4ww',
+    appId: '1:987660316703:web:e5f7d07c6a4d6763c3652a',
+    messagingSenderId: '987660316703',
+    projectId: 'plantii-4fb2e',
+    authDomain: 'plantii-4fb2e.firebaseapp.com',
+    storageBucket: 'plantii-4fb2e.firebasestorage.app',
+    measurementId: 'G-WV5SMBB9M5',
   );
 }

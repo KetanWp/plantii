@@ -1,12 +1,12 @@
 /**
  * Middleware and utility for safe logging
- * Enforces requirement: "Never log images or API keys."
+ * Enforces requirement: "Never log images, API keys, or full AI responses."
  */
 
 const { logger } = require('firebase-functions');
 
 /**
- * Strips sensitive data (images, base64 data, authorization tokens, API keys)
+ * Strips sensitive data (images, base64 data, authorization tokens, API keys, AI responses)
  * from any object before logging.
  */
 function sanitize(obj, depth = 0) {
@@ -51,6 +51,14 @@ function sanitize(obj, depth = 0) {
         lowerKey.includes('password')
       ) {
         cleaned[key] = '[REDACTED_CREDENTIAL]';
+      } else if (
+        lowerKey === 'rawtext' ||
+        lowerKey === 'aiprompt' ||
+        lowerKey === 'airesponse' ||
+        lowerKey === 'fullresponse' ||
+        lowerKey === 'diagnosis'
+      ) {
+        cleaned[key] = '[REDACTED_AI_CONTENT]';
       } else {
         cleaned[key] = sanitize(val, depth + 1);
       }
@@ -65,12 +73,12 @@ function sanitize(obj, depth = 0) {
  * Express middleware to sanitize incoming request logging
  */
 function sanitizeRequestLogging(req, res, next) {
-  // Safe request logging
   const safeLogInfo = {
     method: req.method,
     url: req.originalUrl || req.url,
     ip: req.ip,
     hasAuthHeader: Boolean(req.headers.authorization),
+    hasAppCheckHeader: Boolean(req.headers['x-firebase-appcheck']),
     contentType: req.headers['content-type'],
   };
 

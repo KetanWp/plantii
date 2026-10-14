@@ -7,14 +7,15 @@
     "serve": "firebase emulators:start --only functions,firestore,auth",
     "shell": "firebase functions:shell",
     "start": "npm run shell",
-    "test": "node test/test_units.js",
+    "test": "node test/test_units.js && node test/test_security_hardening.js",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log"
   },
   "engines": {
-    "node": ">=18"
+    "node": "20"
   },
   "dependencies": {
+    "@google/genai": "^2.29.1",
     "@google/generative-ai": "^0.24.0",
     "busboy": "^1.6.0",
     "cors": "^2.8.5",
