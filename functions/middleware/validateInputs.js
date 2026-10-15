@@ -1,8 +1,8 @@
 /**
  * Input Validation Middleware
  *
- * Enforces validation for languages, optional cropHint, and forceRefresh flags.
- * Does NOT require or validate crop type (crops are auto-identified by AI).
+ * Enforces validation for supported languages.
+ * Crops are auto-identified by AI.
  */
 
 const limits = require('../config/limits');
@@ -10,7 +10,7 @@ const limits = require('../config/limits');
 function validateDiagnoseInputs(req, res, next) {
   const isHindi = req.body?.language === 'hi' || req.query?.language === 'hi';
 
-  // 1. Language validation
+  // Language validation
   const rawLang = req.body?.language;
   if (rawLang !== undefined && rawLang !== null) {
     const langStr = String(rawLang).toLowerCase().trim();
@@ -28,17 +28,6 @@ function validateDiagnoseInputs(req, res, next) {
   } else {
     req.body.language = 'en';
   }
-
-  // 2. Optional cropHint validation (item 7d)
-  const rawCropHint = req.body?.cropHint;
-  if (rawCropHint !== undefined && rawCropHint !== null && String(rawCropHint).trim().length > 0) {
-    req.body.cropHint = String(rawCropHint).trim().substring(0, 50);
-  } else {
-    req.body.cropHint = '';
-  }
-
-  // 3. Optional forceRefresh flag (item 7b)
-  req.body.forceRefresh = Boolean(req.body?.forceRefresh === true || req.body?.forceRefresh === 'true');
 
   next();
 }

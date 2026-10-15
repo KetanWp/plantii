@@ -385,7 +385,48 @@ class _WeatherDetailSheetState extends State<WeatherDetailSheet> {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
+
+          // Explicit "Change Place" option row
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  key: const ValueKey('change_place_button'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.forestGreen,
+                    side: const BorderSide(color: AppTheme.forestGreen, width: 1.2),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                  ),
+                  icon: const Icon(Icons.edit_location_alt_rounded, size: 18),
+                  label: Text(
+                    isHindi ? 'स्थान बदलें (शहर/जिला)' : 'Change place (Search)',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  onPressed: () => _promptManualCitySearch(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                key: const ValueKey('use_gps_button'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF1967D2),
+                  side: const BorderSide(color: Color(0xFF1967D2), width: 1.2),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                ),
+                icon: const Icon(Icons.my_location_rounded, size: 18),
+                label: Text(
+                  isHindi ? 'GPS स्थान' : 'Use GPS',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+                onPressed: _requestGpsLocation,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
 
           // Main body content
           Expanded(

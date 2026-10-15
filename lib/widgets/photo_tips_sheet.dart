@@ -1,11 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../services/image_processing_service.dart';
 import '../theme/app_theme.dart';
+import 'camera_permission_helper.dart';
 
 /// Bottom sheet displaying photo clarity tips and allowing farmer to
 /// choose between Phone's Native Camera and Gallery.
@@ -43,6 +44,14 @@ class _PhotoTipsSheetState extends State<PhotoTipsSheet> {
 
   Future<void> _pickImage(ImageSource source) async {
     final isHindi = Localizations.localeOf(context).languageCode == 'hi';
+
+    // Check camera permission first to guarantee image_picker camera never crashes on denied permission
+    if (source == ImageSource.camera) {
+      final hasPermission = await CameraPermissionHelper.ensureCameraPermission(context);
+      if (!hasPermission) {
+        return;
+      }
+    }
 
     try {
       final XFile? pickedFile = await _picker.pickImage(
@@ -90,7 +99,7 @@ class _PhotoTipsSheetState extends State<PhotoTipsSheet> {
                   label: isHindi ? 'सेटिंग्स' : 'Settings',
                   textColor: Colors.yellowAccent,
                   onPressed: () {
-                    Geolocator.openAppSettings();
+                    openAppSettings();
                   },
                 )
               : null,

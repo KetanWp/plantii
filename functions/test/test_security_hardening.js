@@ -257,9 +257,9 @@ console.log('Test 5: Failed AI Call Refunds the Count');
 }
 
 // ============================================================================
-// TEST 6: Input Validation (Allowed Languages, Missing Crop, cropHint & forceRefresh)
+// TEST 6: Input Validation (Allowed Languages & Missing Crop)
 // ============================================================================
-console.log('Test 6: Input Validation (Allowed Languages & Optional cropHint/forceRefresh)');
+console.log('Test 6: Input Validation (Allowed Languages & Missing Crop)');
 {
   // Test invalid language rejected
   const { req: badLangReq, res: badLangRes } = createMockReqRes({
@@ -279,20 +279,8 @@ console.log('Test 6: Input Validation (Allowed Languages & Optional cropHint/for
   validateDiagnoseInputs(noCropReq, noCropRes, () => { nextNoCrop = true; });
   assert.strictEqual(nextNoCrop, true, 'Should accept request with no crop specified');
   assert.strictEqual(noCropReq.body.language, 'hi', 'Should normalize language to lowercase');
-  assert.strictEqual(noCropReq.body.cropHint, '', 'cropHint should default to empty string');
-  assert.strictEqual(noCropReq.body.forceRefresh, false, 'forceRefresh should default to false');
 
-  // Test optional cropHint and forceRefresh pass through
-  const { req: hintReq, res: hintRes } = createMockReqRes({
-    body: { cropHint: '  Tomato  ', forceRefresh: true, language: 'en' },
-  });
-  let nextHint = false;
-  validateDiagnoseInputs(hintReq, hintRes, () => { nextHint = true; });
-  assert.strictEqual(nextHint, true, 'Should accept optional cropHint');
-  assert.strictEqual(hintReq.body.cropHint, 'Tomato', 'Should trim cropHint');
-  assert.strictEqual(hintReq.body.forceRefresh, true, 'Should parse forceRefresh as true');
-
-  console.log('  Passed: Strict validation enforces allowed languages, accepts missing crop, and handles cropHint/forceRefresh');
+  console.log('  Passed: Strict validation enforces allowed languages and accepts missing crop');
 }
 
 // ============================================================================

@@ -66,7 +66,7 @@ async function saveScanRecord({ userId, cropId, language, diagnosis }) {
  * @param {string} [params.cropHint]
  * @param {Object} params.result - Clean diagnosis result object
  */
-async function saveScanCache({ userId, cacheKey, imageHash, language, cropHint = '', result }) {
+async function saveScanCache({ userId, cacheKey, imageHash, language, result }) {
   try {
     const expireAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days TTL
     const cacheRef = admin
@@ -80,7 +80,6 @@ async function saveScanCache({ userId, cacheKey, imageHash, language, cropHint =
       key: cacheKey,
       imageHash,
       language,
-      cropHint: cropHint || '',
       result,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       expireAt,

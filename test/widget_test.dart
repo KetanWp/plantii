@@ -21,6 +21,7 @@ import 'package:plantii/theme/app_theme.dart';
 import 'package:flutter/services.dart';
 import 'package:plantii/main.dart';
 import 'package:plantii/screens/home_screen.dart';
+import 'package:plantii/screens/settings_screen.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -794,6 +795,213 @@ void main() {
       expect(find.text('Not a Plant'), findsOneWidget);
       expect(find.text('Retake Photo'), findsOneWidget);
       expect(find.text('Organic Treatment'), findsNothing);
+    });
+  });
+
+  group('App Architecture & UI Updates Tests', () {
+    testWidgets('Home screen has no bottom navigation bar and has top-bar settings and language switch',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ChangeNotifierProvider(
+          create: (_) => LocaleProvider(initialLocale: const Locale('en')),
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            locale: const Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            routes: {
+              AppRoutes.home: (context) => const HomeScreen(),
+              AppRoutes.settings: (context) => const SettingsScreen(),
+              AppRoutes.history: (context) => const HistoryScreen(),
+            },
+            home: const HomeScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 1. Verify bottom navigation bar is completely removed
+      expect(find.byType(BottomNavigationBar), findsNothing);
+
+      // 2. Verify Settings gear icon button exists in top bar
+      expect(find.byKey(const ValueKey('home_settings_button')), findsOneWidget);
+
+      // 3. Verify immediate language switch exists in top bar
+      expect(find.byKey(const ValueKey('home_language_switch')), findsOneWidget);
+
+      // 4. Verify History is reachable from Home quick-action card
+      expect(find.byKey(const ValueKey('quick_action_history')), findsOneWidget);
+      await tester.ensureVisible(find.byKey(const ValueKey('quick_action_history')));
+      await tester.tap(find.byKey(const ValueKey('quick_action_history')));
+      await tester.pumpAndSettle();
+      expect(find.byType(HistoryScreen), findsOneWidget);
+    });
+
+    testWidgets('Settings screen is reachable from Home gear button, has back button, and keeps only Privacy and About sections',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ChangeNotifierProvider(
+          create: (_) => LocaleProvider(initialLocale: const Locale('en')),
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            locale: const Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            routes: {
+              AppRoutes.home: (context) => const HomeScreen(),
+              AppRoutes.settings: (context) => const SettingsScreen(),
+            },
+            home: const HomeScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap gear icon button to open Settings
+      await tester.tap(find.byKey(const ValueKey('home_settings_button')));
+      await tester.pumpAndSettle();
+
+      // Verify we are on Settings screen
+      expect(find.byType(SettingsScreen), findsOneWidget);
+
+      // Verify explicit back button exists
+      expect(find.byKey(const ValueKey('settings_back_button')), findsOneWidget);
+
+      // Verify Voice section is completely removed
+      expect(find.text('Voice & Audio (TTS)'), findsNothing);
+      expect(find.text('Speech Speed'), findsNothing);
+      expect(find.text('Auto-Play Voice'), findsNothing);
+      expect(find.text('Test Voice'), findsNothing);
+
+      // Verify Weather & Location section is completely removed
+      expect(find.text('Weather & Location'), findsNothing);
+      expect(find.text('District / Location'), findsNothing);
+
+      // Verify Language section is completely removed from Settings
+      expect(find.text('Language / भाषा'), findsNothing);
+      expect(find.text('Change Language'), findsNothing);
+
+      // Verify Privacy and About sections are present
+      expect(find.text('Privacy & Data'), findsOneWidget);
+      expect(find.text('Privacy Policy'), findsOneWidget);
+      expect(find.text('Withdraw Consent'), findsOneWidget);
+      expect(find.text('Delete My Data'), findsOneWidget);
+
+      expect(find.text('About & Support'), findsOneWidget);
+      expect(find.text('App Version'), findsOneWidget);
+      expect(find.text('Contact Support'), findsOneWidget);
+      expect(find.text('Share App'), findsOneWidget);
+
+      // Tap back button and verify returned to Home
+      await tester.tap(find.byKey(const ValueKey('settings_back_button')));
+      await tester.pumpAndSettle();
+      expect(find.byType(HomeScreen), findsOneWidget);
+    });
+
+    testWidgets('Language switch in Home top bar toggles locale immediately',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ChangeNotifierProvider(
+          create: (_) => LocaleProvider(initialLocale: const Locale('en')),
+          child: Consumer<LocaleProvider>(
+            builder: (context, provider, _) {
+              return MaterialApp(
+                theme: AppTheme.lightTheme,
+                locale: provider.locale,
+                supportedLocales: AppLocalizations.supportedLocales,
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                home: const HomeScreen(),
+              );
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Initially in English
+      expect(find.text('Plantii'), findsOneWidget);
+
+      // Tap language switch to switch to Hindi immediately
+      await tester.tap(find.byKey(const ValueKey('home_language_switch')));
+      await tester.pumpAndSettle();
+
+      // Now in Hindi
+      expect(find.text('Plantii (प्लांटी)'), findsOneWidget);
+
+      // Tap again to switch back to English
+      await tester.tap(find.byKey(const ValueKey('home_language_switch')));
+      await tester.pumpAndSettle();
+
+      // Back in English
+      expect(find.text('Plantii'), findsOneWidget);
+    });
+
+    testWidgets('Result screen has disease title with smaller font and no Re-check or Wrong crop buttons',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 1800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      const diagnosis = Diagnosis(
+        id: 'test_diag_compact',
+        cropId: 'tomato',
+        diseaseName: 'Tomato Early Blight Disease In Field',
+        scientificName: 'Alternaria solani',
+        severity: DiagnosisSeverity.moderate,
+        confidenceLevel: 'High (95%)',
+        description: 'Leaf blight detected.',
+        immediateActions: ['Remove leaves'],
+        organicTreatments: ['Neem oil'],
+        chemicalTreatments: ['Mancozeb'],
+        safetyNote: 'Wear gloves',
+        preventionTips: ['Rotate crops'],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.lightTheme,
+          locale: const Locale('en'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: Builder(
+            builder: (ctx) => TextButton(
+              onPressed: () {
+                Navigator.of(ctx).push(
+                  MaterialPageRoute(
+                    builder: (c) => const ResultScreen(),
+                    settings: const RouteSettings(
+                      arguments: {
+                        'diagnosis': diagnosis,
+                        'imagePath': null,
+                      },
+                    ),
+                  ),
+                );
+              },
+              child: const Text('Go Result'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Go Result'));
+      await tester.pumpAndSettle();
+
+      // Check disease title text widget exists with 2 maxLines and ellipsis
+      final titleFinder = find.text('Tomato Early Blight Disease In Field');
+      expect(titleFinder, findsOneWidget);
+      final Text titleText = tester.widget(titleFinder);
+      expect(titleText.maxLines, 2);
+      expect(titleText.overflow, TextOverflow.ellipsis);
+      expect(titleText.style?.fontSize, 21.0);
+
+      // Verify removed buttons do not exist
+      expect(find.byKey(const ValueKey('recheck_button')), findsNothing);
+      expect(find.byKey(const ValueKey('wrong_crop_button')), findsNothing);
+
+      // Verify Listen button is preserved
+      expect(find.byKey(const ValueKey('listen_button')), findsOneWidget);
     });
   });
 }

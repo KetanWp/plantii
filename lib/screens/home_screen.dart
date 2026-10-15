@@ -10,6 +10,7 @@ import '../services/image_processing_service.dart';
 import '../services/locale_provider.dart';
 import '../services/weather_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/camera_permission_helper.dart';
 import '../widgets/circular_scan_button.dart';
 import '../widgets/photo_tips_sheet.dart';
 import '../widgets/privacy_consent_sheet.dart';
@@ -42,7 +43,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
-  int _selectedNavIndex = 0;
   late final WeatherService _weatherService;
   late final ConsentService _consentService;
   late final ImagePicker _imagePicker;
@@ -122,31 +122,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
-  void _onBottomNavTapped(int index, AppLocalizations l10n) {
-    setState(() {
-      _selectedNavIndex = index;
-    });
-
-    switch (index) {
-      case 0:
-        break;
-      case 1:
-        Navigator.pushNamed(context, AppRoutes.history).then((_) {
-          if (mounted) setState(() => _selectedNavIndex = 0);
-        });
-        break;
-      case 2:
-        Navigator.pushNamed(context, AppRoutes.settings).then((_) {
-          if (mounted) setState(() => _selectedNavIndex = 0);
-        });
-        break;
-    }
-  }
-
   /// Initiates the scan flow:
   /// 1. Verifies one-time Privacy Consent (shows PrivacyConsentSheet if not consented)
-  /// 2. Opens PhotoTipsSheet (displays tips + Open Camera / Choose from Gallery)
-  /// 3. Compresses photo and navigates straight to LoadingScreen
+  /// 2. Ensures Camera Permission at point-of-use (friendly explanation, Open Settings if permanently denied)
+  /// 3. Opens PhotoTipsSheet (displays tips + Open Camera / Choose from Gallery)
+  /// 4. Compresses photo and navigates straight to LoadingScreen
   Future<void> _proceedToScan(BuildContext context) async {
     // 1. Consent check: if first scan, show PrivacyConsentSheet
     final hasConsent = await _consentService.hasValidConsent();
@@ -160,7 +140,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     if (!context.mounted) return;
 
-    // 2. Open PhotoTipsSheet with tips and native camera / gallery choices
+    // 2. Camera permission at point of use: friendly prompt if not granted, Open Settings if permanently denied
+    await CameraPermissionHelper.ensureCameraPermission(context);
+
+    if (!context.mounted) return;
+
+    // 3. Open PhotoTipsSheet with tips and native camera / gallery choices
     final File? photoFile = await PhotoTipsSheet.show(context, imagePicker: _imagePicker);
     if (photoFile != null && context.mounted) {
       Navigator.pushNamed(
@@ -224,60 +209,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             child: Text(l10n.close),
           ),
         ],
-      ),
-    );
-  }
-
-  void _showLanguageDialog(BuildContext context) {
-    final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
-    final isHindi = localeProvider.isHindi;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            const Icon(Icons.language_rounded, color: AppTheme.forestGreen, size: 26),
-            const SizedBox(width: 10),
-            Text(
-              isHindi ? 'भाषा चुनें' : 'Choose Language',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              tileColor: isHindi ? AppTheme.leafGreenSubtle : Colors.transparent,
-              leading: Icon(
-                isHindi ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
-                color: AppTheme.forestGreen,
-              ),
-              title: const Text('हिन्दी (Hindi)', style: TextStyle(fontWeight: FontWeight.bold)),
-              onTap: () async {
-                Navigator.pop(ctx);
-                await localeProvider.setLocale(const Locale('hi'));
-              },
-            ),
-            const SizedBox(height: 8),
-            ListTile(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              tileColor: !isHindi ? AppTheme.leafGreenSubtle : Colors.transparent,
-              leading: Icon(
-                !isHindi ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
-                color: AppTheme.forestGreen,
-              ),
-              title: const Text('English', style: TextStyle(fontWeight: FontWeight.bold)),
-              onTap: () async {
-                Navigator.pop(ctx);
-                await localeProvider.setLocale(const Locale('en'));
-              },
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -349,41 +280,65 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // Language Toggle Button
+                              // Language Immediate Toggle Switch (हिं / EN)
                               Material(
                                 color: Colors.transparent,
                                 child: InkWell(
-                                  key: const ValueKey('home_language_button'),
-                                  borderRadius: BorderRadius.circular(20),
-                                  onTap: () => _showLanguageDialog(context),
+                                  key: const ValueKey('home_language_switch'),
+                                  borderRadius: BorderRadius.circular(16),
+                                  onTap: () {
+                                    localeProvider.toggleLocale();
+                                  },
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 5,
+                                      horizontal: 3,
+                                      vertical: 3,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.12),
-                                      borderRadius: BorderRadius.circular(20),
+                                      color: Colors.white.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(16),
                                       border: Border.all(
-                                        color: Colors.white.withValues(alpha: 0.2),
+                                        color: Colors.white.withValues(alpha: 0.25),
                                         width: 1,
                                       ),
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        const Icon(
-                                          Icons.language_rounded,
-                                          color: Colors.white,
-                                          size: 16,
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 7,
+                                            vertical: 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: isHindi ? Colors.white : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Text(
+                                            'हिं',
+                                            style: TextStyle(
+                                              color: isHindi ? AppTheme.forestGreen : Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 12,
+                                            ),
+                                          ),
                                         ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          isHindi ? 'हिन्दी' : 'English',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 12.5,
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 7,
+                                            vertical: 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: !isHindi ? Colors.white : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Text(
+                                            'EN',
+                                            style: TextStyle(
+                                              color: !isHindi ? AppTheme.forestGreen : Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 12,
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -701,6 +656,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
                   // Card 2: Recent Scans History
                   QuickActionCard(
+                    key: const ValueKey('quick_action_history'),
                     icon: Icons.history_edu_rounded,
                     title: l10n.actionHistoryTitle,
                     subtitle: l10n.actionHistorySubtitle,
@@ -724,38 +680,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   ),
                 ],
               ),
-            ),
-          ],
-        ),
-      ),
-
-      // 3. Bottom Navigation Bar (Home, History, Settings only)
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceWhite,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 16,
-              offset: const Offset(0, -4),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _selectedNavIndex,
-          onTap: (index) => _onBottomNavTapped(index, l10n),
-          items: [
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.home_rounded),
-              label: l10n.homeTitle,
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.history_rounded),
-              label: l10n.historyNav,
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.settings_outlined),
-              label: l10n.settingsTitle,
             ),
           ],
         ),

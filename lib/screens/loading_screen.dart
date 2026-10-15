@@ -51,8 +51,6 @@ class _LoadingScreenState extends State<LoadingScreen> {
 
     final Map<String, dynamic>? args =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    final String? cropHint = args?['cropHint'] as String?;
-    final bool forceRefresh = args?['forceRefresh'] as bool? ?? false;
     final String? imagePath = args?['imagePath'] as String?;
     final String languageCode = Localizations.localeOf(context).languageCode;
 
@@ -72,15 +70,11 @@ class _LoadingScreenState extends State<LoadingScreen> {
       final Diagnosis diagnosis = await _diagnosisService.diagnose(
         imageFile: File(imagePath),
         language: languageCode,
-        cropHint: cropHint,
-        forceRefresh: forceRefresh,
       );
 
       final effectiveCrop = diagnosis.detectedCrop.isNotEmpty
           ? diagnosis.detectedCrop
-          : (cropHint != null && cropHint.isNotEmpty
-              ? cropHint
-              : 'Plant');
+          : 'Plant';
 
       // Persist to local offline history so it remains accessible without internet
       final scanRecord = ScanRecord(
@@ -88,7 +82,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
             ? diagnosis.id
             : 'scan_${DateTime.now().millisecondsSinceEpoch}',
         photoPath: imagePath,
-        cropId: cropHint ?? 'plant',
+        cropId: diagnosis.cropId.isNotEmpty ? diagnosis.cropId : 'plant',
         cropName: effectiveCrop,
         detectedCrop: diagnosis.detectedCrop.isNotEmpty ? diagnosis.detectedCrop : effectiveCrop,
         diseaseName: diagnosis.diseaseName,
@@ -135,7 +129,6 @@ class _LoadingScreenState extends State<LoadingScreen> {
     final Map<String, dynamic>? args =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final String? imagePath = args?['imagePath'] as String?;
-    final String? cropHint = args?['cropHint'] as String?;
 
     return Scaffold(
       backgroundColor: AppTheme.earthSand,
@@ -148,7 +141,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
             child: _isLoading
-                ? _buildLoadingState(l10n, imagePath, cropHint)
+                ? _buildLoadingState(l10n, imagePath)
                 : _buildErrorState(l10n, imagePath),
           ),
         ),
@@ -160,7 +153,6 @@ class _LoadingScreenState extends State<LoadingScreen> {
   Widget _buildLoadingState(
     AppLocalizations l10n,
     String? imagePath,
-    String? cropHint,
   ) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -237,26 +229,6 @@ class _LoadingScreenState extends State<LoadingScreen> {
             height: 1.4,
           ),
         ),
-
-        if (cropHint != null && cropHint.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTheme.borderSubtle, width: 1.5),
-            ),
-            child: Text(
-              cropHint,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.primaryGreen,
-              ),
-            ),
-          ),
-        ],
       ],
     );
   }

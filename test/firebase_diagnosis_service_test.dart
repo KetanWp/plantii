@@ -109,18 +109,18 @@ void main() {
       expect(diagnosis.spokenSummary, contains('early blight'));
     });
 
-    test('passes optional cropHint and forceRefresh parameters in request body', () async {
-      bool passedHint = false;
-      bool passedRefresh = false;
+    test('sends image and language in request body and parses diagnosis', () async {
+      bool passedLanguage = false;
+      bool passedImage = false;
 
       final mockHttpClient = MockClient((request) async {
         final body = jsonDecode(request.body) as Map<String, dynamic>;
-        if (body['cropHint'] == 'Cotton') passedHint = true;
-        if (body['forceRefresh'] == true) passedRefresh = true;
+        if (body['language'] == 'en') passedLanguage = true;
+        if (body['image'] != null) passedImage = true;
 
         return http.Response(
           jsonEncode({
-            'id': 'scan_hint_1',
+            'id': 'scan_test_1',
             'status': 'diseased',
             'diseaseName': 'Cotton Leaf Curl',
             'confidenceLevel': 'High (90%)',
@@ -147,12 +147,10 @@ void main() {
       final diag = await service.diagnose(
         imageFile: sampleImageFile,
         language: 'en',
-        cropHint: 'Cotton',
-        forceRefresh: true,
       );
 
-      expect(passedHint, isTrue);
-      expect(passedRefresh, isTrue);
+      expect(passedLanguage, isTrue);
+      expect(passedImage, isTrue);
       expect(diag.diseaseName, 'Cotton Leaf Curl');
     });
 

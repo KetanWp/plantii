@@ -156,15 +156,6 @@ class RealDiagnosisService {
       'language': isHindi ? 'hi' : 'en',
       'image': base64Image,
     };
-    final effectiveHint = (cropHint != null && cropHint.trim().isNotEmpty)
-        ? cropHint.trim()
-        : '';
-    if (effectiveHint.isNotEmpty) {
-      payload['cropHint'] = effectiveHint;
-    }
-    if (forceRefresh) {
-      payload['forceRefresh'] = true;
-    }
     final String requestBody = jsonEncode(payload);
 
     // 4. Send HTTP request with 60s timeout

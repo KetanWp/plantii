@@ -133,7 +133,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(tester.takeException(), isNull);
-        expect(find.text(lang == 'hi' ? 'भाषा बदलें (Change Language)' : 'Change Language'), findsOneWidget);
+        expect(find.text(lang == 'hi' ? 'गोपनीयता नीति' : 'Privacy Policy'), findsOneWidget);
       });
 
       testWidgets('HistoryScreen renders without overflow with items in $lang', (tester) async {
@@ -240,8 +240,8 @@ void main() {
 
         expect(tester.takeException(), isNull);
         expect(find.byKey(const ValueKey('detected_crop_badge')), findsOneWidget);
-        expect(find.byKey(const ValueKey('wrong_crop_button')), findsOneWidget);
-        expect(find.byKey(const ValueKey('recheck_button')), findsOneWidget);
+        expect(find.byKey(const ValueKey('wrong_crop_button')), findsNothing);
+        expect(find.byKey(const ValueKey('recheck_button')), findsNothing);
       });
 
       testWidgets('ResultScreen (Healthy) renders without overflow in $lang', (tester) async {

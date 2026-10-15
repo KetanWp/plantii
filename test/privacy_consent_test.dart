@@ -208,29 +208,16 @@ void main() {
   });
 
   group('SettingsScreen Widget Tests', () {
-    testWidgets('renders all required settings options including Change Language, Privacy Policy and Delete My Data', (tester) async {
+    testWidgets('renders all required settings options: Privacy Policy, Withdraw Consent, Delete My Data, Contact Support, App Version', (tester) async {
       await tester.pumpWidget(createTestApp(child: const SettingsScreen()));
       await tester.pumpAndSettle();
 
-      expect(find.text('Change Language'), findsOneWidget);
       expect(find.text('Privacy Policy'), findsOneWidget);
       expect(find.text('Withdraw Consent'), findsOneWidget);
       expect(find.text('Delete My Data'), findsOneWidget);
       expect(find.text('Contact Support'), findsOneWidget);
       expect(find.text('App Version'), findsOneWidget);
       expect(find.textContaining('info@prakruty.com'), findsWidgets);
-    });
-
-    testWidgets('tapping Change Language opens language picker dialog', (tester) async {
-      await tester.pumpWidget(createTestApp(child: const SettingsScreen()));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Change Language'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Select Language / भाषा चुनें'), findsOneWidget);
-      expect(find.text('हिंदी'), findsOneWidget);
-      expect(find.text('English'), findsAtLeastNWidgets(1));
     });
 
     testWidgets('withdraw consent shows confirmation dialog', (tester) async {

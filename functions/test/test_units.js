@@ -13,9 +13,6 @@ assert(autoPrompt.includes('AUTOMATIC CROP IDENTIFICATION'), 'English prompt sho
 assert(autoPrompt.includes('spokenSummary'), 'English prompt should mention spokenSummary');
 assert(autoPrompt.includes('cropConfidence'), 'English prompt should mention cropConfidence');
 
-const hintPrompt = getDiagnosisPrompt({ cropHint: 'Tomato', language: 'en' });
-assert(hintPrompt.includes('FARMER CONFIRMED CROP: "Tomato"'), 'Prompt with cropHint should include confirmed crop');
-
 const hiPrompt = getDiagnosisPrompt({ language: 'hi' });
 assert(hiPrompt.includes('देवनागरी लिपि'), 'Hindi prompt should include Hindi instructions');
 assert(hiPrompt.includes('spokenSummary'), 'Prompt should mention spokenSummary');

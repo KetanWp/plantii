@@ -1,36 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/app_localizations.dart';
 import '../routes.dart';
 import '../services/consent_service.dart';
-import '../services/locale_provider.dart';
 import '../services/real_diagnosis_service.dart';
-import '../services/tts_service.dart';
-import '../services/weather_service.dart';
 import '../theme/app_theme.dart';
-import '../widgets/weather_detail_sheet.dart';
 
 /// Screen 8: Settings & Preferences Screen
-/// Organised into 5 distinct cards with icons and headings:
-/// 1. Language: Change language (Hindi/English)
-/// 2. Voice: Speech speed slider, voice on/off by default, test voice button
-/// 3. Location: Weather location (auto GPS or choose a place)
-/// 4. Privacy & Data: Privacy Policy, Withdraw consent, Delete my data
-/// 5. About & Support: App version, Contact support (mailto), Share app
+/// Organised into 2 clean cards:
+/// 1. Privacy & Data: Privacy Policy, Withdraw consent, Delete my data
+/// 2. About & Support: App version, Contact support, Share app
 class SettingsScreen extends StatefulWidget {
   final RealDiagnosisService? diagnosisService;
   final ConsentService? consentService;
-  final WeatherService? weatherService;
 
   const SettingsScreen({
     super.key,
     this.diagnosisService,
     this.consentService,
-    this.weatherService,
   });
 
   @override
@@ -40,33 +29,17 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   late final RealDiagnosisService _diagnosisService;
   late final ConsentService _consentService;
-  late final WeatherService _weatherService;
-  late final TtsService _ttsService;
 
   bool _hasConsent = true;
   bool _isDeleting = false;
-  bool _autoPlayVoice = false;
-  double _speechRate = 0.47;
-  bool _isTestingVoice = false;
-  String _locationName = '';
 
   @override
   void initState() {
     super.initState();
     _diagnosisService = widget.diagnosisService ?? RealDiagnosisService();
     _consentService = widget.consentService ?? ConsentService.instance;
-    _weatherService = widget.weatherService ?? WeatherService();
-    _ttsService = TtsService();
 
     _checkConsentStatus();
-    _loadVoiceSettings();
-    _loadLocationSetting();
-  }
-
-  @override
-  void dispose() {
-    _ttsService.dispose();
-    super.dispose();
   }
 
   Future<void> _checkConsentStatus() async {
@@ -76,112 +49,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _hasConsent = hasConsent;
       });
     }
-  }
-
-  Future<void> _loadVoiceSettings() async {
-    final autoPlay = await TtsService.isAutoPlayEnabled();
-    final prefs = await SharedPreferences.getInstance();
-    final speed = prefs.getString(TtsService.prefSpeedKey);
-    final rate = (speed == 'slow') ? 0.42 : 0.47;
-    if (mounted) {
-      setState(() {
-        _autoPlayVoice = autoPlay;
-        _speechRate = rate;
-      });
-    }
-  }
-
-  Future<void> _loadLocationSetting() async {
-    final saved = await _weatherService.getSavedLocation();
-    if (mounted) {
-      setState(() {
-        _locationName = saved?.name ?? '';
-      });
-    }
-  }
-
-  Future<void> _toggleTestVoice(String languageCode) async {
-    if (_isTestingVoice) {
-      await _ttsService.stop();
-      if (mounted) setState(() => _isTestingVoice = false);
-    } else {
-      if (mounted) setState(() => _isTestingVoice = true);
-      final result = await _ttsService.speakTestVoice(languageCode);
-      if (result == TtsPlaybackResult.hindiVoiceNotInstalled && mounted) {
-        _showInstallVoiceDialog();
-      }
-      if (mounted) setState(() => _isTestingVoice = false);
-    }
-  }
-
-  void _showInstallVoiceDialog() {
-    final isHindi = Localizations.localeOf(context).languageCode == 'hi';
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            const Icon(Icons.record_voice_over_rounded, color: AppTheme.forestGreen, size: 28),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                isHindi ? 'हिंदी आवाज़ इंस्टॉल करें' : 'Install Hindi Voice',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              isHindi
-                  ? 'उच्च गुणवत्ता वाली हिंदी आवाज़ के लिए कृपया इन आसान चरणों का पालन करें:'
-                  : 'To enable high-quality Hindi speech, please follow these steps:',
-              style: const TextStyle(fontSize: 14.5, color: AppTheme.textDark, height: 1.4),
-            ),
-            const SizedBox(height: 12),
-            _buildStepRow('1', isHindi ? 'फोन की सेटिंग्स खोलें' : 'Open phone Settings'),
-            _buildStepRow('2', isHindi ? 'System > Languages & input > Text-to-speech पर जाएं' : 'Go to System > Languages & input > Text-to-speech'),
-            _buildStepRow('3', isHindi ? 'Google TTS के आगे गियर आइकन पर टैप करें' : 'Tap gear icon next to Google TTS engine'),
-            _buildStepRow('4', isHindi ? 'Install voice data > Hindi (India) डाउनलोड करें' : 'Tap Install voice data > Download Hindi (India)'),
-          ],
-        ),
-        actions: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.forestGreen,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(isHindi ? 'समझ गया' : 'Got it'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStepRow(String step, String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CircleAvatar(
-            radius: 10,
-            backgroundColor: AppTheme.leafGreenSubtle,
-            child: Text(step, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.forestGreen)),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(text, style: const TextStyle(fontSize: 13.5, color: AppTheme.textDark)),
-          ),
-        ],
-      ),
-    );
   }
 
   Future<void> _handleWithdrawConsent(AppLocalizations l10n) async {
@@ -427,294 +294,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showChangeLanguageDialog(BuildContext context) {
-    final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
-    final isHindi = localeProvider.isHindi;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            const Icon(Icons.language_rounded, color: AppTheme.forestGreen, size: 26),
-            const SizedBox(width: 10),
-            const Expanded(
-              child: Text(
-                'Select Language / भाषा चुनें',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              key: const ValueKey('settings_lang_hi'),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              tileColor: isHindi ? AppTheme.leafGreenSubtle : Colors.transparent,
-              leading: Icon(
-                isHindi ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
-                color: AppTheme.forestGreen,
-              ),
-              title: const Text('हिंदी', style: TextStyle(fontWeight: FontWeight.bold)),
-              trailing: const Text('Hindi', style: TextStyle(color: AppTheme.mutedDark, fontSize: 13)),
-              onTap: () async {
-                Navigator.pop(ctx);
-                await localeProvider.setLocale(const Locale('hi'));
-                if (mounted) setState(() {});
-              },
-            ),
-            const SizedBox(height: 8),
-            ListTile(
-              key: const ValueKey('settings_lang_en'),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              tileColor: !isHindi ? AppTheme.leafGreenSubtle : Colors.transparent,
-              leading: Icon(
-                !isHindi ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
-                color: AppTheme.forestGreen,
-              ),
-              title: const Text('English', style: TextStyle(fontWeight: FontWeight.bold)),
-              onTap: () async {
-                Navigator.pop(ctx);
-                await localeProvider.setLocale(const Locale('en'));
-                if (mounted) setState(() {});
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final localeProvider = Provider.of<LocaleProvider>(context);
-    final isHindi = localeProvider.isHindi;
+    final isHindi = Localizations.localeOf(context).languageCode == 'hi';
 
     return Scaffold(
       backgroundColor: AppTheme.creamBackground,
       appBar: AppBar(
-        title: Text(l10n.settingsTitle),
+        leading: BackButton(
+          key: const ValueKey('settings_back_button'),
+          onPressed: () => Navigator.maybePop(context),
+        ),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            l10n.settingsTitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
           children: [
-            // 1. Language Card
-            _buildSectionHeader(Icons.language_rounded, isHindi ? 'भाषा' : 'Language'),
-            _buildSettingsCard([
-              _buildSettingsTile(
-                icon: Icons.translate_rounded,
-                iconColor: AppTheme.forestGreen,
-                title: isHindi ? 'भाषा बदलें (Change Language)' : 'Change Language',
-                subtitle: isHindi ? 'वर्तमान: हिन्दी (Hindi)' : 'Current: English',
-                trailing: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppTheme.leafGreenSubtle,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppTheme.forestGreen.withValues(alpha: 0.2)),
-                  ),
-                  child: Text(
-                    isHindi ? 'हिन्दी' : 'English',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.forestGreen,
-                    ),
-                  ),
-                ),
-                onTap: () => _showChangeLanguageDialog(context),
-              ),
-            ]),
-            const SizedBox(height: 20),
-
-            // 2. Voice Card
-            _buildSectionHeader(Icons.record_voice_over_rounded, isHindi ? 'आवाज़ और भाषण' : 'Voice & Speech'),
-            _buildSettingsCard([
-              // Voice Speed Controls
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppTheme.forestGreen.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.speed_rounded, color: AppTheme.forestGreen, size: 20),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                isHindi ? 'बोलने की गति' : 'Speech Speed',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.textDark),
-                              ),
-                              Text(
-                                _speechRate <= 0.44
-                                    ? (isHindi ? 'धीमी गति (0.42x)' : 'Slow rate (0.42x)')
-                                    : (isHindi ? 'सामान्य गति (0.47x)' : 'Normal rate (0.47x)'),
-                                style: const TextStyle(fontSize: 13, color: AppTheme.mutedDark),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ChoiceChip(
-                            label: Center(
-                              child: Text(
-                                isHindi ? 'धीमी (0.42x)' : 'Slow (0.42x)',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: _speechRate <= 0.44 ? AppTheme.forestGreen : AppTheme.textDark,
-                                ),
-                              ),
-                            ),
-                            selected: _speechRate <= 0.44,
-                            selectedColor: AppTheme.leafGreenSubtle,
-                            backgroundColor: Colors.grey.shade100,
-                            onSelected: (val) async {
-                              if (val) {
-                                await _ttsService.setSpeed(TtsSpeed.slow);
-                                setState(() => _speechRate = 0.42);
-                              }
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: ChoiceChip(
-                            label: Center(
-                              child: Text(
-                                isHindi ? 'सामान्य (0.47x)' : 'Normal (0.47x)',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: _speechRate > 0.44 ? AppTheme.forestGreen : AppTheme.textDark,
-                                ),
-                              ),
-                            ),
-                            selected: _speechRate > 0.44,
-                            selectedColor: AppTheme.leafGreenSubtle,
-                            backgroundColor: Colors.grey.shade100,
-                            onSelected: (val) async {
-                              if (val) {
-                                await _ttsService.setSpeed(TtsSpeed.normal);
-                                setState(() => _speechRate = 0.47);
-                              }
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1, indent: 64, color: AppTheme.borderSubtle),
-
-              // Voice On/Off by Default Switch
-              SwitchListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                secondary: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppTheme.forestGreen.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.volume_up_rounded, color: AppTheme.forestGreen, size: 20),
-                ),
-                title: Text(
-                  isHindi ? 'आवाज़ अपने आप शुरू करें' : 'Voice on by default',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.textDark),
-                ),
-                subtitle: Text(
-                  isHindi
-                      ? 'परिणाम खुलते ही विवरण बोलकर सुनाएं'
-                      : 'Automatically read diagnosis results aloud',
-                  style: const TextStyle(fontSize: 13, color: AppTheme.mutedDark),
-                ),
-                activeThumbColor: AppTheme.forestGreen,
-                value: _autoPlayVoice,
-                onChanged: (val) async {
-                  await TtsService.setAutoPlayEnabled(val);
-                  setState(() => _autoPlayVoice = val);
-                },
-              ),
-              const Divider(height: 1, indent: 64, color: AppTheme.borderSubtle),
-
-              // Test Voice Button
-              _buildSettingsTile(
-                icon: _isTestingVoice ? Icons.stop_circle_rounded : Icons.play_circle_fill_rounded,
-                iconColor: _isTestingVoice ? AppTheme.severityHigh : AppTheme.forestGreen,
-                title: isHindi ? 'आवाज़ का परीक्षण करें' : 'Test Voice',
-                subtitle: isHindi ? 'प्लांटाई की आवाज़ सुनकर जांचें' : 'Listen to a sample voice',
-                trailing: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _isTestingVoice ? AppTheme.severityHigh : AppTheme.forestGreen,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                  icon: Icon(_isTestingVoice ? Icons.stop : Icons.volume_up, size: 16),
-                  label: Text(
-                    _isTestingVoice ? (isHindi ? 'रोकें' : 'Stop') : (isHindi ? 'सुनें' : 'Play'),
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                  ),
-                  onPressed: () => _toggleTestVoice(isHindi ? 'hi' : 'en'),
-                ),
-                onTap: () => _toggleTestVoice(isHindi ? 'hi' : 'en'),
-              ),
-            ]),
-            const SizedBox(height: 20),
-
-            // 3. Location Card
-            _buildSectionHeader(Icons.location_on_rounded, isHindi ? 'मौसम का स्थान' : 'Weather Location'),
-            _buildSettingsCard([
-              _buildSettingsTile(
-                icon: Icons.my_location_rounded,
-                iconColor: const Color(0xFF1967D2),
-                title: isHindi ? 'मौसम स्थान' : 'Weather Location',
-                subtitle: _locationName.isNotEmpty
-                    ? _locationName
-                    : (isHindi ? 'स्वचालित स्थान (GPS) सक्रिय' : 'Auto GPS location active'),
-                trailing: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE8F0FE),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    isHindi ? 'बदलें' : 'Change',
-                    style: const TextStyle(
-                      color: Color(0xFF1967D2),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-                onTap: () {
-                  WeatherDetailSheet.show(context, weatherService: _weatherService)
-                      .then((_) => _loadLocationSetting());
-                },
-              ),
-            ]),
-            const SizedBox(height: 20),
-
-            // 4. Privacy & Data Card
+            // 1. Privacy & Data Card
             _buildSectionHeader(Icons.security_rounded, isHindi ? 'गोपनीयता और डेटा' : 'Privacy & Data'),
             _buildSettingsCard([
               // Privacy Policy
@@ -766,7 +372,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ]),
             const SizedBox(height: 20),
 
-            // 5. About & Support Card
+            // 2. About & Support Card
             _buildSectionHeader(Icons.help_outline_rounded, isHindi ? 'ऐप विवरण और सहायता' : 'About & Support'),
             _buildSettingsCard([
               // App Version
@@ -801,20 +407,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onTap: () => _handleShareApp(isHindi),
               ),
             ]),
-            const SizedBox(height: 30),
-
-            // Plain Language Compliance Footnote
-            Center(
-              child: Text(
-                'Prakruty Tech • Chhattisgarh, India\nAI crop doctor with zero ads & zero trackers',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppTheme.mutedDark,
-                  height: 1.5,
-                ),
-              ),
-            ),
+            const SizedBox(height: 28),
           ],
         ),
       ),
@@ -826,15 +419,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
       padding: const EdgeInsets.only(left: 4.0, bottom: 8.0),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: AppTheme.forestGreen),
+          Icon(icon, size: 20, color: AppTheme.forestGreen),
           const SizedBox(width: 8),
-          Text(
-            title.toUpperCase(),
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.8,
-              color: AppTheme.forestGreen,
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 16.5,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textDark,
+                letterSpacing: -0.2,
+              ),
             ),
           ),
         ],
@@ -843,12 +440,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildSettingsCard(List<Widget> children) {
-    return Material(
-      color: Colors.white,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: const BorderSide(color: AppTheme.borderSubtle, width: 1.5),
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceWhite,
+        borderRadius: AppTheme.cardBorderRadius,
+        border: Border.all(color: AppTheme.borderSubtle, width: 1.2),
+        boxShadow: AppTheme.cardShadow,
       ),
       child: Column(
         children: children,
@@ -865,37 +462,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Color? titleColor,
     VoidCallback? onTap,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        leading: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: iconColor.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: iconColor, size: 24),
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: iconColor.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(10),
         ),
-        title: Text(
-          title,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-            color: titleColor ?? AppTheme.textDark,
-          ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: const TextStyle(
-            fontSize: 13.5,
-            color: AppTheme.mutedDark,
-            height: 1.3,
-          ),
-        ),
-        trailing: trailing,
-        onTap: onTap,
+        child: Icon(icon, color: iconColor, size: 22),
       ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+          color: titleColor ?? AppTheme.textDark,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: const TextStyle(
+          fontSize: 13,
+          color: AppTheme.mutedDark,
+          height: 1.3,
+        ),
+      ),
+      trailing: trailing,
+      onTap: onTap,
     );
   }
 }

@@ -418,7 +418,7 @@ function classifyGeminiError(error) {
  * @param {string} [options.language] - 'hi' or 'en'
  * @returns {Promise<Object>} Validated diagnosis object
  */
-async function analyzeCropLeaf({ apiKey, imageBuffer, mimeType, cropHint = '', language = 'en' }) {
+async function analyzeCropLeaf({ apiKey, imageBuffer, mimeType, language = 'en' }) {
   if (!apiKey) {
     const keyErr = new Error('AI API Key is missing. Please configure GEMINI_API_KEY via Firebase secrets.');
     keyErr.code = 'ai_auth_error';
@@ -437,7 +437,7 @@ async function analyzeCropLeaf({ apiKey, imageBuffer, mimeType, cropHint = '', l
   let modelIndex = 0;
   let activeModel = models[modelIndex];
 
-  const basePrompt = getDiagnosisPrompt({ cropHint, language });
+  const basePrompt = getDiagnosisPrompt({ language });
   const contents = [
     { text: basePrompt },
     {
@@ -468,7 +468,6 @@ async function analyzeCropLeaf({ apiKey, imageBuffer, mimeType, cropHint = '', l
   // Attempt 1: Call with primary model (or fallback if primary is overloaded)
   try {
     safeLogger.info('Initiating Gemini vision analysis', {
-      cropHint: cropHint || 'none',
       language,
       model: activeModel,
       temperature: config.temperature,

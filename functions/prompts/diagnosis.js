@@ -14,14 +14,11 @@
  * Builds the prompt for diagnosing plant diseases from leaf images.
  *
  * @param {Object} params
- * @param {string} [params.cropHint] - Optional farmer-confirmed crop name
  * @param {string} [params.language] - Output language code ('hi' for Hindi, 'en' for English)
  * @returns {string} - Complete instruction prompt for the AI model
  */
-function getDiagnosisPrompt({ cropHint = '', language = 'en' } = {}) {
+function getDiagnosisPrompt({ language = 'en' } = {}) {
   const isHindi = language === 'hi';
-  const hasCropHint = typeof cropHint === 'string' && cropHint.trim().length > 0;
-  const confirmedCrop = hasCropHint ? cropHint.trim() : '';
 
   const languageInstruction = isHindi
     ? `CRITICAL LANGUAGE REQUIREMENT:
@@ -36,7 +33,7 @@ Respond ENTIRELY in natural, conversational Hindi (देवनागरी ल�
   return `You are an expert plant pathologist and agronomist named "Plantii".
 You diagnose crop diseases, pest infestations, nutrient deficiencies, and physiological disorders from leaf photos.
 
-${hasCropHint ? `FARMER CONFIRMED CROP: "${confirmedCrop}" (The farmer has explicitly specified/confirmed this crop. Respect this identification unless completely impossible).` : 'AUTOMATIC CROP IDENTIFICATION: No crop was specified. You MUST inspect botanical features to identify the crop species.'}
+AUTOMATIC CROP IDENTIFICATION: You MUST inspect botanical features to identify the crop species.
 PREFERRED LANGUAGE: ${isHindi ? 'Hindi (हिन्दी)' : 'English'}
 
 ${languageInstruction}
@@ -67,12 +64,12 @@ First, evaluate the leaf image:
      * Leave diseaseName, scientificName, treatments, prevention, causes blank/empty.
 
 3. Crop Species Identification:
-   ${hasCropHint ? `- The farmer has confirmed the crop is "${confirmedCrop}". Set "detectedCrop" to "${confirmedCrop}" and "cropConfidence" to "very_likely".` : `- Analyze leaf architecture, venation pattern, margin, shape, texture, and petiole.
+   - Analyze leaf architecture, venation pattern, margin, shape, texture, and petiole.
    - Set "cropConfidence" strictly to: "very_likely", "likely", or "possible".
    - CRITICAL IDENTIFICATION RULE:
      * NEVER confidently invent or guess a crop species if ambiguous.
      * If "cropConfidence" is "possible" or the crop cannot be recognized with confidence:
-       Set "status": "poor_photo", or if diagnosing visible foliar damage, set "detectedCrop": "${isHindi ? 'अज्ञात पौधा (Unknown Plant)' : 'Unknown Plant'}" and explicitly state in description: "${isHindi ? 'मुझे पूरा यकीन नहीं है कि यह कौन सी फसल है। कृपया "फसल बदलें" बटन से सही फसल चुनें।' : "I'm not sure which crop this is. Please confirm your crop using the Change Crop button."}".`}
+       Set "status": "poor_photo", or if diagnosing visible foliar damage, set "detectedCrop": "${isHindi ? 'अज्ञात पौधा (Unknown Plant)' : 'Unknown Plant'}".
 
 STEP 2: PATHOLOGY & SYMPTOM DIAGNOSIS
 (Execute only when Step 1 confirms a valid, decipherable plant leaf)

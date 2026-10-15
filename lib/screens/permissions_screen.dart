@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../routes.dart';
@@ -29,11 +29,10 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
   Future<void> _handleAllow() async {
     setState(() => _isRequesting = true);
     try {
-      // 1. Request location permission via Geolocator
-      final permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        await Geolocator.requestPermission();
-      }
+      // 1. Request Camera permission
+      await Permission.camera.request();
+      // 2. Request Location permission
+      await Permission.location.request();
     } catch (e) {
       debugPrint('PermissionsScreen: Error requesting permissions: $e');
     } finally {
@@ -113,8 +112,8 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                 iconBgColor: AppTheme.leafGreenSubtle,
                 title: isHindi ? 'कैमरा (Camera)' : 'Camera',
                 description: isHindi
-                  ? 'रोग की पहचान के लिए पौधे की पत्ती की फोटो लेने हेतु।'
-                  : 'To take clear photos of plant leaves for disease diagnosis.',
+                  ? 'पौधे की पत्ती की फोटो लेने के लिए (रोग की सही पहचान हेतु)।'
+                  : 'Used to take photos of plant leaves for disease diagnosis.',
               ),
               const SizedBox(height: 16),
 

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
 import '../models/diagnosis.dart';
-import '../routes.dart';
 import '../services/mock_diagnosis_service.dart';
 import '../services/real_diagnosis_service.dart';
 import '../services/tts_service.dart';
@@ -31,8 +30,6 @@ class _ResultScreenState extends State<ResultScreen> {
   late final TtsService _ttsService;
   late final RealDiagnosisService _diagnosisService;
 
-  bool _autoPlayChecked = false;
-
   @override
   void initState() {
     super.initState();
@@ -45,17 +42,6 @@ class _ResultScreenState extends State<ResultScreen> {
     if (mounted) {
       setState(() {});
     }
-  }
-
-  void _checkAutoPlay(Diagnosis diagnosis, String languageCode, AppLocalizations l10n) {
-    if (_autoPlayChecked) return;
-    _autoPlayChecked = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final autoPlay = await TtsService.isAutoPlayEnabled();
-      if (autoPlay && mounted && !_ttsService.isSpeaking) {
-        _toggleAudioReadout(diagnosis, languageCode, l10n);
-      }
-    });
   }
 
   @override
@@ -121,8 +107,6 @@ class _ResultScreenState extends State<ResultScreen> {
             : const MockDiagnosisService()
                 .getDiagnosisSyncFallback('tomato', false));
 
-    _checkAutoPlay(diagnosis, languageCode, l10n);
-
     return Scaffold(
       backgroundColor: AppTheme.earthSand,
       appBar: AppBar(
@@ -174,10 +158,6 @@ class _ResultScreenState extends State<ResultScreen> {
                     _buildPhotoCard(imagePath),
                     const SizedBox(height: 14),
 
-                    // Cache status & Re-check button
-                    _buildCacheNotice(imagePath, diagnosis, languageCode == 'hi'),
-                    const SizedBox(height: 14),
-
                     // Render content according to Diagnosis status
                     if (diagnosis.status == DiagnosisStatus.healthy)
                       ..._buildHealthyContent(context, diagnosis, languageCode, l10n)
@@ -185,7 +165,7 @@ class _ResultScreenState extends State<ResultScreen> {
                         diagnosis.status == DiagnosisStatus.notAPlant)
                       ..._buildRetakeContent(context, diagnosis, languageCode, l10n)
                     else
-                      ..._buildDiseasedContent(context, diagnosis, languageCode, l10n, imagePath),
+                      ..._buildDiseasedContent(context, diagnosis, languageCode, l10n),
                   ],
                 ),
               ),
@@ -438,11 +418,10 @@ class _ResultScreenState extends State<ResultScreen> {
     Diagnosis diagnosis,
     String languageCode,
     AppLocalizations l10n,
-    String? imagePath,
   ) {
     return [
       // Disease name, Detected Crop badge & Scientific name
-      _buildDiseaseHeader(diagnosis, languageCode, imagePath),
+      _buildDiseaseHeader(diagnosis, languageCode),
       const SizedBox(height: 14),
 
       // Traffic-light severity & Confidence in words
@@ -573,179 +552,8 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
-  /// Cache notice and Re-check button
-  Widget _buildCacheNotice(String? imagePath, Diagnosis diagnosis, bool isHindi) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: diagnosis.fromCache ? const Color(0xFFE8F5E9) : Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: diagnosis.fromCache ? AppTheme.forestGreen.withValues(alpha: 0.3) : AppTheme.borderSubtle,
-          width: 1.2,
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            diagnosis.fromCache ? Icons.bolt_rounded : Icons.check_circle_outline_rounded,
-            size: 20,
-            color: diagnosis.fromCache ? AppTheme.forestGreen : AppTheme.mutedDark,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              diagnosis.fromCache
-                  ? (isHindi ? 'कैश से प्राप्त (त्वरित परिणाम)' : 'Cached result (instant)')
-                  : (isHindi ? 'ताज़ा जांच परिणाम' : 'Fresh diagnosis'),
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: diagnosis.fromCache ? AppTheme.forestGreen : AppTheme.mutedDark,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          TextButton.icon(
-            key: const ValueKey('recheck_button'),
-            style: TextButton.styleFrom(
-              foregroundColor: AppTheme.forestGreen,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            ),
-            icon: const Icon(Icons.refresh_rounded, size: 18),
-            label: Text(
-              isHindi ? 'पुनः जांचें' : 'Re-check',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-            ),
-            onPressed: () => _recheckDiagnosis(imagePath, isHindi),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _recheckDiagnosis(String? imagePath, bool isHindi) {
-    if (imagePath == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isHindi ? 'छवि उपलब्ध नहीं है।' : 'Image not available for re-check.'),
-        ),
-      );
-      return;
-    }
-    _ttsService.stop();
-    Navigator.pushReplacementNamed(
-      context,
-      AppRoutes.loading,
-      arguments: {
-        'imagePath': imagePath,
-        'forceRefresh': true,
-      },
-    );
-  }
-
-  void _showWrongCropSheet(BuildContext context, String? imagePath, bool isHindi) {
-    if (imagePath == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isHindi ? 'छवि उपलब्ध नहीं है।' : 'Image not available for crop change.'),
-        ),
-      );
-      return;
-    }
-
-    final crops = [
-      {'en': 'Tomato', 'hi': 'टमाटर'},
-      {'en': 'Potato', 'hi': 'आलू'},
-      {'en': 'Rice (Paddy)', 'hi': 'धान (चावल)'},
-      {'en': 'Wheat', 'hi': 'गेहूं'},
-      {'en': 'Cotton', 'hi': 'कपास'},
-      {'en': 'Maize (Corn)', 'hi': 'मक्का'},
-      {'en': 'Soybean', 'hi': 'सोयाबीन'},
-      {'en': 'Mustard', 'hi': 'सरसों'},
-      {'en': 'Sugarcane', 'hi': 'गन्ना'},
-      {'en': 'Chilli', 'hi': 'मिर्च'},
-      {'en': 'Onion', 'hi': 'प्याज'},
-      {'en': 'Mango', 'hi': 'आम'},
-      {'en': 'Other', 'hi': 'अन्य'},
-    ];
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppTheme.creamBackground,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    isHindi ? 'सही फसल चुनें' : 'Choose Correct Crop',
-                    style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold, color: AppTheme.textDark),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              ),
-              Text(
-                isHindi
-                    ? 'सही फसल चुनकर पुनः जांचें (नया स्कैन खर्च नहीं होगा)'
-                    : 'Select crop to re-diagnose (uses no extra scan)',
-                style: const TextStyle(fontSize: 13.5, color: AppTheme.mutedDark),
-              ),
-              const SizedBox(height: 12),
-              ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: crops.length,
-                  separatorBuilder: (_, index) => const Divider(height: 1),
-                  itemBuilder: (c, i) {
-                    final crop = crops[i];
-                    final name = isHindi ? crop['hi']! : crop['en']!;
-                    return ListTile(
-                      title: Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-                      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
-                      onTap: () {
-                        Navigator.pop(ctx);
-                        _rerunWithCropHint(imagePath, crop['en']!);
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _rerunWithCropHint(String imagePath, String cropHint) {
-    _ttsService.stop();
-    Navigator.pushReplacementNamed(
-      context,
-      AppRoutes.loading,
-      arguments: {
-        'imagePath': imagePath,
-        'cropHint': cropHint,
-      },
-    );
-  }
-
-  /// Disease Title, Detected Crop badge, Wrong crop button, and Scientific name header
-  Widget _buildDiseaseHeader(Diagnosis diagnosis, String languageCode, String? imagePath) {
+  /// Disease Title, Detected Crop badge, and Scientific name header
+  Widget _buildDiseaseHeader(Diagnosis diagnosis, String languageCode) {
     final isHindi = languageCode == 'hi';
     final String cropDisplay = diagnosis.detectedCrop.isNotEmpty
         ? diagnosis.detectedCrop
@@ -753,97 +561,50 @@ class _ResultScreenState extends State<ResultScreen> {
             ? diagnosis.cropId
             : (isHindi ? 'अज्ञात पौधा' : 'Unknown Plant'));
 
-    final bool isLowConfidenceCrop = diagnosis.cropConfidence.toLowerCase() == 'possible';
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Detected Crop Badge & "Wrong crop? Change it" button
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            Container(
-              key: const ValueKey('detected_crop_badge'),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: AppTheme.leafGreenSubtle,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.forestGreen.withValues(alpha: 0.25)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.eco_rounded, size: 18, color: AppTheme.forestGreen),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      '${isHindi ? "पहचाना गया पौधा" : "Detected Crop"}: $cropDisplay',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.forestGreen,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            OutlinedButton(
-              key: const ValueKey('wrong_crop_button'),
-              style: OutlinedButton.styleFrom(
-                minimumSize: Size.zero,
-                foregroundColor: AppTheme.forestGreen,
-                side: const BorderSide(color: AppTheme.forestGreen),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              ),
-              onPressed: () => _showWrongCropSheet(context, imagePath, isHindi),
-              child: Text(
-                isHindi ? 'गलत पौधा? बदलें' : 'Wrong crop? Change it',
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-
-        if (isLowConfidenceCrop) ...[
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF3E0),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.orange.shade300),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.help_outline_rounded, size: 16, color: Colors.orange.shade800),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    isHindi
-                        ? 'फसल की पहचान में अनिश्चितता है। कृपया सही फसल चुनें।'
-                        : "I'm not sure which crop this is. Please confirm or change it.",
-                    style: TextStyle(fontSize: 12.5, color: Colors.orange.shade900, fontWeight: FontWeight.w500),
+        // Detected Crop Badge
+        Container(
+          key: const ValueKey('detected_crop_badge'),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: AppTheme.leafGreenSubtle,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppTheme.forestGreen.withValues(alpha: 0.25)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.eco_rounded, size: 18, color: AppTheme.forestGreen),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  '${isHindi ? "पहचाना गया पौधा" : "Detected Crop"}: $cropDisplay',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.forestGreen,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
 
         const SizedBox(height: 10),
+        // Disease title (20-22 sp, maxLines: 2, ellipsis, non-overflowing)
         Text(
           diagnosis.diseaseName,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
-            fontSize: 26,
+            fontSize: 21,
             fontWeight: FontWeight.bold,
             color: AppTheme.highContrastDark,
-            height: 1.2,
+            height: 1.25,
           ),
         ),
         if (diagnosis.scientificName.isNotEmpty && diagnosis.scientificName != 'N/A') ...[
@@ -851,7 +612,7 @@ class _ResultScreenState extends State<ResultScreen> {
           Text(
             diagnosis.scientificName,
             style: const TextStyle(
-              fontSize: 16,
+              fontSize: 15,
               fontStyle: FontStyle.italic,
               color: AppTheme.mutedDark,
             ),
