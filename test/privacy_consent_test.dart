@@ -9,7 +9,9 @@ import 'package:plantii/screens/home_screen.dart';
 import 'package:plantii/screens/result_screen.dart';
 import 'package:plantii/screens/settings_screen.dart';
 import 'package:plantii/services/consent_service.dart';
-import 'package:plantii/services/real_diagnosis_service.dart';
+import 'package:plantii/services/locale_provider.dart';
+import 'package:plantii/widgets/privacy_consent_sheet.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Widget createTestApp({
@@ -17,23 +19,26 @@ Widget createTestApp({
   Locale locale = const Locale('en'),
   Map<String, WidgetBuilder>? extraRoutes,
 }) {
-  return MaterialApp(
-    locale: locale,
-    supportedLocales: AppLocalizations.supportedLocales,
-    localizationsDelegates: const [
-      AppLocalizations.delegate,
-      GlobalMaterialLocalizations.delegate,
-      GlobalWidgetsLocalizations.delegate,
-      GlobalCupertinoLocalizations.delegate,
-    ],
-    routes: {
-      ...?extraRoutes,
-      AppRoutes.home: (context) => const HomeScreen(),
-      AppRoutes.consent: (context) => const ConsentScreen(),
-      AppRoutes.settings: (context) => const SettingsScreen(),
-      AppRoutes.privacyPolicy: (context) => const Scaffold(body: Text('Privacy Policy Dummy')),
-    },
-    home: child,
+  return ChangeNotifierProvider(
+    create: (_) => LocaleProvider(initialLocale: locale),
+    child: MaterialApp(
+      locale: locale,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      routes: {
+        ...?extraRoutes,
+        AppRoutes.home: (context) => const HomeScreen(),
+        AppRoutes.consent: (context) => const ConsentScreen(),
+        AppRoutes.settings: (context) => const SettingsScreen(),
+        AppRoutes.privacyPolicy: (context) => const Scaffold(body: Text('Privacy Policy Dummy')),
+      },
+      home: child,
+    ),
   );
 }
 
@@ -75,89 +80,118 @@ void main() {
     });
   });
 
-  group('ConsentScreen Widget Tests', () {
-    testWidgets('renders all 5 consent points, policy link, and buttons', (tester) async {
-      // Set larger test viewport size
+  group('PrivacyConsentSheet Widget Tests', () {
+    testWidgets('renders Hindi/English notice, I agree button, Privacy Policy link, and Cancel button', (tester) async {
       tester.view.physicalSize = const Size(800, 1400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
 
-      await tester.pumpWidget(createTestApp(child: const ConsentScreen()));
-      await tester.pumpAndSettle();
-
-      // Check header title
-      expect(find.text('Important Privacy & AI Notice'), findsWidgets);
-
-      // Verify all 5 lines are present
-      expect(find.textContaining('Google Gemini'), findsOneWidget);
-      expect(find.textContaining('anonymous account'), findsOneWidget);
-      expect(find.textContaining("don't sell your data"), findsOneWidget);
-      expect(find.textContaining('guidance, not a guarantee'), findsOneWidget);
-      expect(find.textContaining('delete your data anytime'), findsOneWidget);
-
-      // Verify full policy link
-      expect(find.byKey(const ValueKey('view_full_privacy_policy_btn')), findsOneWidget);
-
-      // Verify two main buttons
-      expect(find.byKey(const ValueKey('consent_agree_button')), findsOneWidget);
-      expect(find.byKey(const ValueKey('consent_decline_button')), findsOneWidget);
-    });
-
-    testWidgets('tapping I Agree saves consent and triggers callback', (tester) async {
-      tester.view.physicalSize = const Size(800, 1400);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      bool consentGranted = false;
-      await tester.pumpWidget(createTestApp(
-        child: ConsentScreen(
-          onConsentGranted: () => consentGranted = true,
+      bool? agreedResult;
+      await tester.pumpWidget(MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        home: Scaffold(
+          body: Builder(
+            builder: (context) {
+              return ElevatedButton(
+                key: const ValueKey('trigger_sheet_btn'),
+                onPressed: () async {
+                  agreedResult = await PrivacyConsentSheet.show(context);
+                },
+                child: const Text('Open Sheet'),
+              );
+            },
+          ),
         ),
       ));
       await tester.pumpAndSettle();
 
-      await tester.ensureVisible(find.byKey(const ValueKey('consent_agree_button')));
-      await tester.tap(find.byKey(const ValueKey('consent_agree_button')));
+      await tester.tap(find.byKey(const ValueKey('trigger_sheet_btn')));
       await tester.pumpAndSettle();
 
-      expect(consentGranted, true);
-      final hasConsent = await ConsentService.instance.hasValidConsent();
-      expect(hasConsent, true);
+      // Check sheet presence
+      expect(find.byKey(const ValueKey('privacy_consent_bottom_sheet')), findsOneWidget);
+
+      // Check bilingual lines
+      expect(find.textContaining('Your plant photo is sent to an AI service to diagnose it'), findsOneWidget);
+      expect(find.textContaining("We don't sell your data"), findsOneWidget);
+      expect(find.textContaining('पौधे की फोटो रोग की पहचान के लिए AI सेवा को भेजी जाती है'), findsOneWidget);
+
+      // Check buttons and links
+      expect(find.byKey(const ValueKey('privacy_agree_button')), findsOneWidget);
+      expect(find.byKey(const ValueKey('privacy_cancel_button')), findsOneWidget);
+      expect(find.byKey(const ValueKey('privacy_policy_link')), findsOneWidget);
+
+      // Tap Cancel
+      await tester.tap(find.byKey(const ValueKey('privacy_cancel_button')));
+      await tester.pumpAndSettle();
+
+      expect(agreedResult, isFalse);
+      expect(await ConsentService.instance.hasValidConsent(), isFalse);
     });
 
-    testWidgets('tapping No Thanks displays explanation dialog', (tester) async {
+    testWidgets('tapping I Agree saves consent locally and returns true', (tester) async {
       tester.view.physicalSize = const Size(800, 1400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
 
-      await tester.pumpWidget(createTestApp(child: const ConsentScreen()));
+      bool? agreedResult;
+      await tester.pumpWidget(MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        home: Scaffold(
+          body: Builder(
+            builder: (context) {
+              return ElevatedButton(
+                key: const ValueKey('trigger_sheet_btn'),
+                onPressed: () async {
+                  agreedResult = await PrivacyConsentSheet.show(context);
+                },
+                child: const Text('Open Sheet'),
+              );
+            },
+          ),
+        ),
+      ));
       await tester.pumpAndSettle();
 
-      await tester.ensureVisible(find.byKey(const ValueKey('consent_decline_button')));
-      await tester.tap(find.byKey(const ValueKey('consent_decline_button')));
+      await tester.tap(find.byKey(const ValueKey('trigger_sheet_btn')));
       await tester.pumpAndSettle();
 
-      // Verify explanation dialog
-      expect(find.text('Consent Required to Scan'), findsOneWidget);
-      expect(find.textContaining('Without your consent, scanning features remain blocked'), findsOneWidget);
-      expect(find.text('Review Consent'), findsOneWidget);
-      expect(find.text('Back to Home'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('privacy_agree_button')));
+      await tester.pumpAndSettle();
+
+      expect(agreedResult, isTrue);
+      expect(await ConsentService.instance.hasValidConsent(), isTrue);
+      expect(await ConsentService.instance.getConsentedVersion(), '1.0');
     });
   });
 
-  group('HomeScreen Consent & Scan Blocking Tests', () {
-    testWidgets('tapping scan button when consent missing shows blocked dialog', (tester) async {
+  group('HomeScreen First-Scan Consent Flow Tests', () {
+    testWidgets('tapping scan on first use shows PrivacyConsentSheet', (tester) async {
       SharedPreferences.setMockInitialValues({}); // No consent
       await tester.pumpWidget(createTestApp(child: const HomeScreen()));
       await tester.pumpAndSettle();
 
-      // Tap circular scan button by Key
+      // Tap circular scan button
       await tester.tap(find.byKey(const ValueKey('home_circular_scan_button')));
       await tester.pumpAndSettle();
 
-      // Dialog should appear
-      expect(find.text('Consent Required to Scan'), findsOneWidget);
-      expect(find.byKey(const ValueKey('review_consent_dialog_button')), findsOneWidget);
+      // One-time bottom sheet appears
+      expect(find.byKey(const ValueKey('privacy_consent_bottom_sheet')), findsOneWidget);
+      expect(find.byKey(const ValueKey('privacy_agree_button')), findsOneWidget);
+
+      // Tap I agree
+      await tester.tap(find.byKey(const ValueKey('privacy_agree_button')));
+      await tester.pumpAndSettle();
+
+      // Consent is saved
+      expect(await ConsentService.instance.hasValidConsent(), isTrue);
+
+      // Now photo tips sheet is displayed (scan flow continues)
+      expect(find.byKey(const ValueKey('photo_tips_bottom_sheet')), findsOneWidget);
     });
 
     testWidgets('top settings button navigates to SettingsScreen', (tester) async {
@@ -174,10 +208,11 @@ void main() {
   });
 
   group('SettingsScreen Widget Tests', () {
-    testWidgets('renders all required settings options', (tester) async {
+    testWidgets('renders all required settings options including Change Language, Privacy Policy and Delete My Data', (tester) async {
       await tester.pumpWidget(createTestApp(child: const SettingsScreen()));
       await tester.pumpAndSettle();
 
+      expect(find.text('Change Language'), findsOneWidget);
       expect(find.text('Privacy Policy'), findsOneWidget);
       expect(find.text('Withdraw Consent'), findsOneWidget);
       expect(find.text('Delete My Data'), findsOneWidget);
@@ -186,8 +221,19 @@ void main() {
       expect(find.textContaining('info@prakruty.com'), findsWidgets);
     });
 
+    testWidgets('tapping Change Language opens language picker dialog', (tester) async {
+      await tester.pumpWidget(createTestApp(child: const SettingsScreen()));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Change Language'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Select Language / भाषा चुनें'), findsOneWidget);
+      expect(find.text('हिंदी'), findsOneWidget);
+      expect(find.text('English'), findsOneWidget);
+    });
+
     testWidgets('withdraw consent shows confirmation dialog', (tester) async {
-      // Pre-seed consent
       final consentService = ConsentService();
       await consentService.saveConsent(version: '1.0');
 

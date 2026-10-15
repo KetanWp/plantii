@@ -22,6 +22,7 @@ console.log('Test 2: Schema Validation (diseased, healthy, not_a_plant, poor_pho
 // 2a. Diseased valid case
 const diseasedJson = JSON.stringify({
   status: 'diseased',
+  detectedCrop: 'Tomato',
   diseaseName: 'Early Blight',
   scientificName: 'Alternaria solani',
   severity: 'moderate',
@@ -38,6 +39,7 @@ const diseasedJson = JSON.stringify({
 
 const validatedDiseased = parseAndValidateDiagnosis(diseasedJson);
 assert.strictEqual(validatedDiseased.status, 'diseased');
+assert.strictEqual(validatedDiseased.detectedCrop, 'Tomato');
 assert.strictEqual(validatedDiseased.diseaseName, 'Early Blight');
 assert.strictEqual(validatedDiseased.severity, 'moderate');
 assert.strictEqual(validatedDiseased.confidence, 'very_likely');
@@ -49,6 +51,7 @@ assert.strictEqual(validatedDiseased.chemicalTreatments.length, 2);
 // 2b. Healthy valid case (empty treatments and blank diseaseName are valid)
 const healthyJson = JSON.stringify({
   status: 'healthy',
+  detectedCrop: 'Wheat',
   diseaseName: '',
   scientificName: '',
   severity: 'none',
@@ -64,6 +67,7 @@ const healthyJson = JSON.stringify({
 });
 const validatedHealthy = parseAndValidateDiagnosis(healthyJson);
 assert.strictEqual(validatedHealthy.status, 'healthy');
+assert.strictEqual(validatedHealthy.detectedCrop, 'Wheat');
 assert.strictEqual(validatedHealthy.confidence, 'very_likely');
 assert.strictEqual(validatedHealthy.diseaseName, '');
 assert.strictEqual(validatedHealthy.organicTreatments.length, 0);
@@ -71,6 +75,7 @@ assert.strictEqual(validatedHealthy.organicTreatments.length, 0);
 // 2c. Not a plant valid case
 const notPlantJson = JSON.stringify({
   status: 'not_a_plant',
+  detectedCrop: 'None',
   diseaseName: '',
   scientificName: '',
   confidence: 'very_likely',
@@ -85,11 +90,13 @@ const notPlantJson = JSON.stringify({
 });
 const validatedNotPlant = parseAndValidateDiagnosis(notPlantJson);
 assert.strictEqual(validatedNotPlant.status, 'not_a_plant');
+assert.strictEqual(validatedNotPlant.detectedCrop, 'None');
 assert.strictEqual(validatedNotPlant.confidence, 'very_likely');
 
 // 2d. Poor photo valid case
 const poorPhotoJson = JSON.stringify({
   status: 'poor_photo',
+  detectedCrop: 'Unknown / Unclear',
   diseaseName: '',
   scientificName: '',
   confidence: 'very_likely',
@@ -104,7 +111,19 @@ const poorPhotoJson = JSON.stringify({
 });
 const validatedPoorPhoto = parseAndValidateDiagnosis(poorPhotoJson);
 assert.strictEqual(validatedPoorPhoto.status, 'poor_photo');
+assert.strictEqual(validatedPoorPhoto.detectedCrop, 'Unknown / Unclear');
 assert.strictEqual(validatedPoorPhoto.photoQuality, 'poor');
+
+// 2d-2. Test default fallback if detectedCrop is omitted
+const omittedCropJson = JSON.stringify({
+  status: 'healthy',
+  diseaseName: '',
+  scientificName: '',
+  confidence: 'likely',
+  description: 'Healthy leaf without detectedCrop specified.'
+});
+const validatedOmitted = parseAndValidateDiagnosis(omittedCropJson);
+assert.strictEqual(validatedOmitted.detectedCrop, 'Unknown Plant', 'Should default to Unknown Plant if omitted');
 
 // 2e. Markdown wrapped JSON strip
 const markdownWrappedJson = `\`\`\`json\n${diseasedJson}\n\`\`\``;

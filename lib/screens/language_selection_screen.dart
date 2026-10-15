@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../l10n/app_localizations.dart';
 import '../routes.dart';
-import '../services/consent_service.dart';
 import '../services/locale_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/big_touch_button.dart';
 
-/// Screen 1: Language Selection (shown on first launch)
+/// Screen 1: Language Selection (shown only on first launch when no language is saved)
 class LanguageSelectionScreen extends StatelessWidget {
   const LanguageSelectionScreen({super.key});
 
@@ -34,41 +34,43 @@ class LanguageSelectionScreen extends StatelessWidget {
                 color: AppTheme.primaryGreen,
               ),
               const SizedBox(height: 16),
-              Text(
-                l10n.languageTitle,
+              const Text(
+                'Choose Language / भाषा चुनें',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineMedium,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textDark,
+                ),
               ),
               const SizedBox(height: 36),
               // Hindi option
               BigTouchButton(
-                label: 'हिन्दी (Hindi)',
+                key: const ValueKey('choose_hindi_button'),
+                label: 'हिंदी',
                 isPrimary: localeProvider.isHindi,
                 onPressed: () async {
-                  localeProvider.setLocale(const Locale('hi'));
-                  final hasConsent = await ConsentService.instance.hasValidConsent();
+                  // Await the write to shared_preferences before navigating
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setString(LocaleProvider.languageKey, 'hi');
+                  await localeProvider.setLocale(const Locale('hi'));
                   if (!context.mounted) return;
-                  if (hasConsent) {
-                    Navigator.pushReplacementNamed(context, AppRoutes.home);
-                  } else {
-                    Navigator.pushReplacementNamed(context, AppRoutes.consent);
-                  }
+                  Navigator.pushReplacementNamed(context, AppRoutes.home);
                 },
               ),
               const SizedBox(height: 16),
               // English option
               BigTouchButton(
+                key: const ValueKey('choose_english_button'),
                 label: 'English',
                 isPrimary: !localeProvider.isHindi,
                 onPressed: () async {
-                  localeProvider.setLocale(const Locale('en'));
-                  final hasConsent = await ConsentService.instance.hasValidConsent();
+                  // Await the write to shared_preferences before navigating
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setString(LocaleProvider.languageKey, 'en');
+                  await localeProvider.setLocale(const Locale('en'));
                   if (!context.mounted) return;
-                  if (hasConsent) {
-                    Navigator.pushReplacementNamed(context, AppRoutes.home);
-                  } else {
-                    Navigator.pushReplacementNamed(context, AppRoutes.consent);
-                  }
+                  Navigator.pushReplacementNamed(context, AppRoutes.home);
                 },
               ),
             ],

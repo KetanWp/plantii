@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 
 /// Screen displaying the complete, editable Privacy Policy
@@ -21,7 +20,8 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _selectedLang ??= Localizations.localeOf(context).languageCode == 'hi' ? 'hi' : 'en';
+    _selectedLang ??=
+        Localizations.localeOf(context).languageCode == 'hi' ? 'hi' : 'en';
     _loadPolicyAsset();
   }
 
@@ -48,7 +48,6 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     final isHindi = _selectedLang == 'hi';
     final langKey = isHindi ? 'hi' : 'en';
 
@@ -61,29 +60,15 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
     return Scaffold(
       backgroundColor: AppTheme.creamBackground,
       appBar: AppBar(
-        title: Text(isHindi ? 'गोपनीयता नीति' : 'Privacy Policy'),
-        actions: [
-          // Language switcher button
-          Padding(
-            padding: const EdgeInsets.only(right: 12.0),
-            child: ActionChip(
-              backgroundColor: Colors.white.withValues(alpha: 0.18),
-              label: Text(
-                isHindi ? 'English' : 'हिन्दी',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-              onPressed: () {
-                setState(() {
-                  _selectedLang = isHindi ? 'en' : 'hi';
-                });
-              },
-            ),
+        backgroundColor: AppTheme.forestDark,
+        foregroundColor: Colors.white,
+        title: Text(
+          isHindi ? 'गोपनीयता नीति' : 'Privacy Policy',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
           ),
-        ],
+        ),
       ),
       body: _isLoading
           ? const Center(
@@ -95,6 +80,93 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    // High-contrast language selector with clearly visible selected state
+                    Container(
+                      key: const ValueKey('privacy_policy_lang_selector'),
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppTheme.borderSubtle, width: 1.5),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x0A000000),
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: InkWell(
+                              key: const ValueKey('privacy_lang_hi'),
+                              onTap: () => setState(() => _selectedLang = 'hi'),
+                              borderRadius: BorderRadius.circular(12),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(vertical: 11),
+                                decoration: BoxDecoration(
+                                  color: isHindi ? AppTheme.forestGreen : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    if (isHindi) ...[
+                                      const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+                                      const SizedBox(width: 6),
+                                    ],
+                                    Text(
+                                      'हिन्दी (Hindi)',
+                                      style: TextStyle(
+                                        color: isHindi ? Colors.white : AppTheme.textDark,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: InkWell(
+                              key: const ValueKey('privacy_lang_en'),
+                              onTap: () => setState(() => _selectedLang = 'en'),
+                              borderRadius: BorderRadius.circular(12),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(vertical: 11),
+                                decoration: BoxDecoration(
+                                  color: !isHindi ? AppTheme.forestGreen : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    if (!isHindi) ...[
+                                      const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+                                      const SizedBox(width: 6),
+                                    ],
+                                    Text(
+                                      'English',
+                                      style: TextStyle(
+                                        color: !isHindi ? Colors.white : AppTheme.textDark,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+
                     // Header card with company and effective date
                     Container(
                       padding: const EdgeInsets.all(18),
@@ -103,7 +175,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.08),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -144,8 +216,9 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                                     Text(
                                       '${isHindi ? "प्रभावी तिथि" : "Effective Date"}: 14-10-2026 • v1.0',
                                       style: const TextStyle(
-                                        color: AppTheme.textLightMuted,
+                                        color: Color(0xFFE0EAE3),
                                         fontSize: 13,
+                                        fontWeight: FontWeight.w500,
                                       ),
                                     ),
                                   ],
@@ -166,7 +239,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 14.5,
-                                  height: 1.4,
+                                  height: 1.45,
                                 ),
                               ),
                             ),
@@ -192,8 +265,8 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                           Expanded(
                             child: Text(
                               isHindi
-                                ? 'विशेष ध्यान: आपके पौधे की फोटो रोग विश्लेषण के लिए सुरक्षित रूप से गूगल जेमिनी एआई द्वारा प्रोसेस की जाती है। यह फोटो हमारे बैकएंड सर्वर पर कभी स्टोर नहीं होती।'
-                                : 'Key Note: Your plant leaf photo is processed in-memory by Google Gemini AI for diagnosis. It is never stored on our backend servers.',
+                                  ? 'विशेष ध्यान: आपके पौधे की फोटो रोग विश्लेषण के लिए सुरक्षित रूप से गूगल जेमिनी एआई द्वारा प्रोसेस की जाती है। यह फोटो हमारे बैकएंड सर्वर पर कभी स्टोर नहीं होती।'
+                                  : 'Key Note: Your plant leaf photo is processed in-memory by Google Gemini AI for diagnosis. It is never stored on our backend servers.',
                               style: const TextStyle(
                                 fontSize: 14,
                                 height: 1.4,
@@ -207,7 +280,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Dynamic sections
+                    // Dynamic sections (Dark text on clean white card for maximum outdoor contrast)
                     ...sections.map((section) {
                       final sec = section as Map<String, dynamic>;
                       final secTitle = sec['title'] as String? ?? '';
@@ -220,11 +293,11 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: AppTheme.borderSubtle, width: 1.5),
-                          boxShadow: [
+                          boxShadow: const [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.03),
+                              color: Color(0x08000000),
                               blurRadius: 8,
-                              offset: const Offset(0, 2),
+                              offset: Offset(0, 2),
                             ),
                           ],
                         ),

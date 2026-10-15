@@ -127,7 +127,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               icon: Icons.camera_alt,
               label: l10n.startFirstScan,
               onPressed: () {
-                Navigator.pushNamed(context, AppRoutes.cropSelection);
+                Navigator.pushReplacementNamed(context, AppRoutes.home);
               },
             ),
           ],
@@ -217,7 +217,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              record.cropName,
+                              (record.detectedCrop != null && record.detectedCrop!.isNotEmpty)
+                                  ? record.detectedCrop!
+                                  : (record.diagnosis.detectedCrop.isNotEmpty
+                                      ? record.diagnosis.detectedCrop
+                                      : record.cropName),
                               style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,

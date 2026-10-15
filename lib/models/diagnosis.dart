@@ -102,6 +102,7 @@ enum DiagnosisSeverity {
 class Diagnosis {
   final String id;
   final String cropId;
+  final String detectedCrop;
   final DiagnosisStatus status;
   final String diseaseName;
   final String scientificName;
@@ -120,6 +121,7 @@ class Diagnosis {
   const Diagnosis({
     required this.id,
     required this.cropId,
+    this.detectedCrop = '',
     this.status = DiagnosisStatus.diseased,
     required this.diseaseName,
     required this.scientificName,
@@ -145,6 +147,7 @@ class Diagnosis {
     return {
       'id': id,
       'cropId': cropId,
+      'detectedCrop': detectedCrop,
       'status': status.wireName,
       'diseaseName': diseaseName,
       'scientificName': scientificName,
@@ -184,6 +187,7 @@ class Diagnosis {
     return Diagnosis(
       id: map['id'] as String? ?? '',
       cropId: map['cropId'] as String? ?? '',
+      detectedCrop: map['detectedCrop'] as String? ?? (map['cropId'] as String? ?? ''),
       status: status,
       diseaseName: map['diseaseName'] as String? ?? '',
       scientificName: map['scientificName'] as String? ?? '',

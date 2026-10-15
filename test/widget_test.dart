@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:plantii/l10n/app_localizations.dart';
-import 'package:plantii/models/crop_item.dart';
 import 'package:plantii/models/diagnosis.dart';
 import 'package:plantii/models/scan_record.dart';
 import 'package:plantii/routes.dart';
@@ -20,6 +19,8 @@ import 'package:plantii/services/scan_history_service.dart';
 import 'package:plantii/services/tts_service.dart';
 import 'package:plantii/theme/app_theme.dart';
 import 'package:flutter/services.dart';
+import 'package:plantii/main.dart';
+import 'package:plantii/screens/home_screen.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -28,35 +29,80 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  group('CropSelectionScreen Tests', () {
-    testWidgets('renders all 5 crops with large cards and titles',
+  group('Crop Selection Bypassed & Direct Flow Tests', () {
+    testWidgets('CropSelectionScreen automatically forwards to camera flow without crop selection cards',
         (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(800, 1400);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
       await tester.pumpWidget(
-        ChangeNotifierProvider(
-          create: (_) => LocaleProvider(),
-          child: MaterialApp(
-            theme: AppTheme.lightTheme,
-            locale: const Locale('hi'),
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
-            home: const CropSelectionScreen(),
-          ),
+        MaterialApp(
+          routes: {
+            AppRoutes.cropSelection: (context) => const CropSelectionScreen(),
+            AppRoutes.camera: (context) => const Scaffold(body: Text('Camera Flow Screen')),
+          },
+          initialRoute: AppRoutes.cropSelection,
         ),
       );
       await tester.pumpAndSettle();
 
-      // Check all 5 crops are present in CropItem
-      expect(CropItem.supportedCrops.length, 5);
+      // Automatically forwards to camera flow
+      expect(find.text('Camera Flow Screen'), findsOneWidget);
+    });
+  });
 
-      // Verify grid items exist
-      expect(find.byType(Card), findsNWidgets(5));
-      expect(find.text('टमाटर'), findsOneWidget); // Hindi default
-      expect(find.text('आलू'), findsOneWidget);
+  group('Language Selection & Persistence Widget Tests', () {
+    testWidgets('first launch -> language screen; after choosing and restarting -> Home directly',
+        (WidgetTester tester) async {
+      SharedPreferences.setMockInitialValues({}); // First launch: no saved language
+
+      final savedLanguage1 = await LocaleProvider.getSavedLanguage();
+      final initialRoute1 = (savedLanguage1 != null && savedLanguage1.isNotEmpty)
+          ? AppRoutes.home
+          : AppRoutes.language;
+
+      expect(initialRoute1, AppRoutes.language);
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider(
+          create: (_) => LocaleProvider(),
+          child: MyApp(initialRoute: initialRoute1),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // First launch shows language selection screen
+      expect(find.text('Choose Language / भाषा चुनें'), findsOneWidget);
+      expect(find.text('हिंदी'), findsOneWidget);
+      expect(find.text('English'), findsOneWidget);
+
+      // Choose Hindi
+      await tester.tap(find.text('हिंदी'));
+      await tester.pumpAndSettle();
+
+      // Directly navigates to Home
+      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(find.text('Choose Language / भाषा चुनें'), findsNothing);
+
+      // Verify language is persisted
+      final savedLanguage2 = await LocaleProvider.getSavedLanguage();
+      expect(savedLanguage2, 'hi');
+
+      // Simulate app restart
+      final restartInitialRoute = (savedLanguage2 != null && savedLanguage2.isNotEmpty)
+          ? AppRoutes.home
+          : AppRoutes.language;
+
+      expect(restartInitialRoute, AppRoutes.home);
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider(
+          create: (_) => LocaleProvider(initialLocale: Locale(savedLanguage2!)),
+          child: MyApp(initialRoute: restartInitialRoute),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Directly lands on Home without showing language screen
+      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(find.text('Choose Language / भाषा चुनें'), findsNothing);
     });
   });
 

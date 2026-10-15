@@ -25,7 +25,8 @@ async function saveScanRecord({ userId, cropId, language, diagnosis }) {
   const scanRecord = {
     id: docRef.id,
     userId,
-    cropId: cropId || 'general_crop',
+    cropId: cropId || diagnosis.detectedCrop || 'general_crop',
+    detectedCrop: diagnosis.detectedCrop || cropId || 'Unknown Plant',
     status: diagnosis.status || 'diseased',
     diseaseName: diagnosis.diseaseName || '',
     scientificName: diagnosis.scientificName || 'N/A',

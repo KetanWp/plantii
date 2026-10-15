@@ -12,6 +12,9 @@ import 'theme/app_theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Read saved language before runApp to decide initial route and avoid showing language screen on every restart
+  final String? savedLanguage = await LocaleProvider.getSavedLanguage();
+
   // Initialize Firebase with platform-specific options
   try {
     await Firebase.initializeApp(
@@ -23,20 +26,37 @@ Future<void> main() async {
     debugPrint('Firebase initialization warning: $e');
   }
 
-  runApp(const PlantiiApp());
+  runApp(PlantiiApp(initialLanguage: savedLanguage));
 }
 
-/// Backward compatibility alias
+/// Backward compatibility aliases
 typedef CropDoctorApp = PlantiiApp;
+typedef MyApp = PlantiiApp;
 
 /// Root widget of Plantii application
 class PlantiiApp extends StatelessWidget {
-  const PlantiiApp({super.key});
+  final String? initialLanguage;
+  final String? initialRoute;
+
+  const PlantiiApp({
+    super.key,
+    this.initialLanguage,
+    this.initialRoute,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final bool hasSavedLanguage =
+        initialLanguage != null && initialLanguage!.trim().isNotEmpty;
+    final String startRoute = initialRoute ??
+        (hasSavedLanguage ? AppRoutes.home : AppRoutes.language);
+
+    final Locale initialLocale = hasSavedLanguage
+        ? Locale(initialLanguage!.trim())
+        : const Locale('hi');
+
     return ChangeNotifierProvider(
-      create: (_) => LocaleProvider(),
+      create: (_) => LocaleProvider(initialLocale: initialLocale),
       child: Consumer<LocaleProvider>(
         builder: (context, localeProvider, _) {
           return MaterialApp(
@@ -47,7 +67,7 @@ class PlantiiApp extends StatelessWidget {
             locale: localeProvider.locale,
             supportedLocales: AppLocalizations.supportedLocales,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
-            initialRoute: AppRoutes.language,
+            initialRoute: startRoute,
             routes: AppRoutes.routes,
           );
         },

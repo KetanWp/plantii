@@ -1,30 +1,128 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 
 import '../l10n/app_localizations.dart';
 import '../routes.dart';
 import '../services/consent_service.dart';
+import '../services/image_processing_service.dart';
+import '../services/locale_provider.dart';
+import '../services/weather_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/circular_scan_button.dart';
+import '../widgets/photo_tips_sheet.dart';
+import '../widgets/privacy_consent_sheet.dart';
 import '../widgets/quick_action_card.dart';
+import '../widgets/weather_detail_sheet.dart';
 
 /// Screen 1: Home Screen
 ///
-/// Redesigned with:
-/// - Dark green top section with greeting and weather chip
-/// - Prominent circular scan button with subtle concentric ring
+/// Features:
+/// - Dark green header with live Open-Meteo weather chip
+/// - Direct camera flow: Photo Tips sheet -> Native Phone Camera or Gallery
+/// - One-time bottom sheet privacy consent before user's first scan
+/// - Android lost-data recovery (retrieveLostData) on process death
 /// - Quick-action cards (Gallery, History, Expert Helpline)
-/// - Bottom navigation bar (Home, History, Weather, Profile)
-/// - Zero hardcoded strings (100% localized)
-/// - Full protection against Hindi text overflow
+/// - Bottom navigation bar (Home, History, Weather, Settings)
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final WeatherService? weatherService;
+  final ConsentService? consentService;
+  final ImagePicker? imagePicker;
+
+  const HomeScreen({
+    super.key,
+    this.weatherService,
+    this.consentService,
+    this.imagePicker,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _selectedNavIndex = 0;
+  late final WeatherService _weatherService;
+  late final ConsentService _consentService;
+  late final ImagePicker _imagePicker;
+
+  WeatherData? _weatherData;
+  bool _isLoadingWeather = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _weatherService = widget.weatherService ?? WeatherService();
+    _consentService = widget.consentService ?? ConsentService.instance;
+    _imagePicker = widget.imagePicker ?? ImagePicker();
+
+    _loadWeather();
+    _checkLostCameraData();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkLostCameraData();
+    }
+  }
+
+  /// Handles Android killing the app while camera is open
+  Future<void> _checkLostCameraData() async {
+    try {
+      final LostDataResponse response = await _imagePicker.retrieveLostData();
+      if (response.isEmpty) return;
+
+      if (response.file != null) {
+        final rawFile = File(response.file!.path);
+        if (rawFile.existsSync()) {
+          final compressed = await ImageProcessingService.validateAndCompress(rawFile);
+          if (mounted) {
+            Navigator.pushNamed(
+              context,
+              AppRoutes.loading,
+              arguments: {
+                'imagePath': compressed.path,
+                'cropId': '',
+                'cropName': '',
+              },
+            );
+          }
+        }
+      } else if (response.exception != null) {
+        debugPrint('HomeScreen: Error from lost camera data: ${response.exception}');
+      }
+    } catch (e) {
+      debugPrint('HomeScreen: Error checking lost camera data: $e');
+    }
+  }
+
+  Future<void> _loadWeather({bool forceRefresh = false}) async {
+    try {
+      final data = await _weatherService.fetchWeather(forceRefresh: forceRefresh);
+      if (mounted) {
+        setState(() {
+          _weatherData = data;
+          _isLoadingWeather = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('HomeScreen: Could not fetch weather: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingWeather = false;
+        });
+      }
+    }
+  }
 
   void _onBottomNavTapped(int index, AppLocalizations l10n) {
     setState(() {
@@ -33,7 +131,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     switch (index) {
       case 0:
-        // Already on Home
         break;
       case 1:
         Navigator.pushNamed(context, AppRoutes.history).then((_) {
@@ -41,102 +138,48 @@ class _HomeScreenState extends State<HomeScreen> {
         });
         break;
       case 2:
-        _showWeatherSnackBar(l10n);
-        setState(() => _selectedNavIndex = 0);
+        WeatherDetailSheet.show(context, weatherService: _weatherService).then((_) {
+          _loadWeather();
+          if (mounted) setState(() => _selectedNavIndex = 0);
+        });
         break;
       case 3:
-        _showProfileModal(context, l10n);
-        setState(() => _selectedNavIndex = 0);
+        Navigator.pushNamed(context, AppRoutes.settings).then((_) {
+          if (mounted) setState(() => _selectedNavIndex = 0);
+        });
         break;
     }
   }
 
-  void _showWeatherSnackBar(AppLocalizations l10n) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.wb_sunny_rounded, color: Colors.amber, size: 24),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                '${l10n.weatherChipSunny} • ${l10n.weatherChipAdvisory}',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: AppTheme.forestDark,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        margin: const EdgeInsets.all(16),
-        duration: const Duration(seconds: 4),
-      ),
-    );
-  }
+  /// Initiates the scan flow:
+  /// 1. Verifies one-time Privacy Consent (shows PrivacyConsentSheet if not consented)
+  /// 2. Opens PhotoTipsSheet (displays tips + Open Camera / Choose from Gallery)
+  /// 3. Compresses photo and navigates straight to LoadingScreen
+  Future<void> _proceedToScan(BuildContext context) async {
+    // 1. Consent check: if first scan, show PrivacyConsentSheet
+    final hasConsent = await _consentService.hasValidConsent();
+    if (!hasConsent) {
+      if (!context.mounted) return;
+      final agreed = await PrivacyConsentSheet.show(context, consentService: _consentService);
+      if (!agreed) {
+        return; // Block scan until user agrees
+      }
+    }
 
-  void _showConsentBlockedDialog(BuildContext context, AppLocalizations l10n) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            const Icon(Icons.shield_outlined, color: AppTheme.forestGreen, size: 28),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                l10n.consentRequiredTitle,
-                style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-        content: Text(
-          l10n.consentRequiredDesc,
-          style: const TextStyle(fontSize: 15.5, height: 1.45, color: AppTheme.highContrastDark),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              l10n.cancel,
-              style: const TextStyle(fontSize: 16, color: AppTheme.mutedDark),
-            ),
-          ),
-          ElevatedButton(
-            key: const ValueKey('review_consent_dialog_button'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.forestGreen,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              Navigator.pushNamed(context, AppRoutes.consent);
-            },
-            child: Text(
-              l10n.consentReview,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _proceedToScan(BuildContext context, AppLocalizations l10n) async {
-    final hasConsent = await ConsentService.instance.hasValidConsent();
     if (!context.mounted) return;
-    if (hasConsent) {
-      Navigator.pushNamed(context, AppRoutes.cropSelection);
-    } else {
-      _showConsentBlockedDialog(context, l10n);
+
+    // 2. Open PhotoTipsSheet with tips and native camera / gallery choices
+    final File? photoFile = await PhotoTipsSheet.show(context, imagePicker: _imagePicker);
+    if (photoFile != null && context.mounted) {
+      Navigator.pushNamed(
+        context,
+        AppRoutes.loading,
+        arguments: {
+          'imagePath': photoFile.path,
+          'cropId': '',
+          'cropName': '',
+        },
+      );
     }
   }
 
@@ -195,125 +238,65 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showProfileModal(BuildContext context, AppLocalizations l10n) {
-    showModalBottomSheet(
+  void _showLanguageDialog(BuildContext context) {
+    final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
+    final isHindi = localeProvider.isHindi;
+
+    showDialog(
       context: context,
-      backgroundColor: AppTheme.surfaceWhite,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(22.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Container(
-                    width: 44,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: AppTheme.borderSubtle,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Text(
-                  l10n.profileTitle,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textDark,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Language Option
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppTheme.leafGreenSubtle,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.language_rounded, color: AppTheme.forestGreen),
-                  ),
-                  title: Text(
-                    l10n.profileLanguage,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    Navigator.pushNamed(context, AppRoutes.language);
-                  },
-                ),
-                const Divider(),
-                // Settings & Privacy Option
-                ListTile(
-                  key: const ValueKey('profile_settings_tile'),
-                  contentPadding: EdgeInsets.zero,
-                  leading: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppTheme.leafGreenSubtle,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.settings_outlined, color: AppTheme.forestGreen),
-                  ),
-                  title: Text(
-                    l10n.settingsTitle,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    Navigator.pushNamed(context, AppRoutes.settings);
-                  },
-                ),
-                const Divider(),
-                // Helpline Option
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppTheme.leafGreenSubtle,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.phone_in_talk_rounded, color: AppTheme.forestGreen),
-                  ),
-                  title: Text(
-                    l10n.profileHelpline,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  subtitle: Text(l10n.expertModalDesc.split('\n').first),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _showExpertDialog(context, l10n);
-                  },
-                ),
-                const SizedBox(height: 12),
-                Center(
-                  child: Text(
-                    l10n.profileVersion,
-                    style: const TextStyle(fontSize: 14, color: AppTheme.textMuted),
-                  ),
-                ),
-              ],
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.language_rounded, color: AppTheme.forestGreen, size: 26),
+            const SizedBox(width: 10),
+            Text(
+              isHindi ? 'भाषा चुनें' : 'Choose Language',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
             ),
-          ),
-        );
-      },
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              tileColor: isHindi ? AppTheme.leafGreenSubtle : Colors.transparent,
+              leading: Icon(
+                isHindi ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
+                color: AppTheme.forestGreen,
+              ),
+              title: const Text('हिन्दी (Hindi)', style: TextStyle(fontWeight: FontWeight.bold)),
+              onTap: () async {
+                Navigator.pop(ctx);
+                await localeProvider.setLocale(const Locale('hi'));
+              },
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              tileColor: !isHindi ? AppTheme.leafGreenSubtle : Colors.transparent,
+              leading: Icon(
+                !isHindi ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
+                color: AppTheme.forestGreen,
+              ),
+              title: const Text('English', style: TextStyle(fontWeight: FontWeight.bold)),
+              onTap: () async {
+                Navigator.pop(ctx);
+                await localeProvider.setLocale(const Locale('en'));
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final localeProvider = Provider.of<LocaleProvider>(context);
+    final isHindi = localeProvider.isHindi;
 
     return Scaffold(
       backgroundColor: AppTheme.creamBackground,
@@ -321,7 +304,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 1. Dark Green Top Section (Forest Header)
+            // 1. Dark Green Hero Header
             Container(
               decoration: const BoxDecoration(
                 gradient: AppTheme.forestHeaderGradient,
@@ -333,24 +316,25 @@ class _HomeScreenState extends State<HomeScreen> {
               child: SafeArea(
                 bottom: false,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Top Row: App Brand & Language Selector Chip
+                      // Top Row: App Brand & Quick Action Icons
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          // Brand Pill
                           Row(
                             children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.asset(
-                                  'assets/images/logo.png',
-                                  width: 32,
-                                  height: 32,
-                                  fit: BoxFit.cover,
+                              Container(
+                                padding: const EdgeInsets.all(7),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.eco_rounded,
+                                  color: AppTheme.leafGreenAccent,
+                                  size: 24,
                                 ),
                               ),
                               const SizedBox(width: 10),
@@ -358,24 +342,22 @@ class _HomeScreenState extends State<HomeScreen> {
                                 l10n.appTitle,
                                 style: const TextStyle(
                                   color: AppTheme.textLight,
-                                  fontSize: 20,
+                                  fontSize: 22,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: -0.3,
                                 ),
                               ),
                             ],
                           ),
-
-                          // Quick Language Toggle Chip & Settings Button
                           Row(
                             children: [
+                              // Language Toggle Button
                               Material(
                                 color: Colors.transparent,
                                 child: InkWell(
+                                  key: const ValueKey('home_language_button'),
                                   borderRadius: BorderRadius.circular(20),
-                                  onTap: () {
-                                    Navigator.pushNamed(context, AppRoutes.language);
-                                  },
+                                  onTap: () => _showLanguageDialog(context),
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 12,
@@ -389,19 +371,22 @@ class _HomeScreenState extends State<HomeScreen> {
                                         width: 1,
                                       ),
                                     ),
-                                    child: const Row(
+                                    child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Icon(
+                                        const Icon(
                                           Icons.language_rounded,
                                           color: Colors.white,
                                           size: 18,
                                         ),
-                                        SizedBox(width: 6),
-                                        Icon(
-                                          Icons.arrow_drop_down_rounded,
-                                          color: Colors.white,
-                                          size: 18,
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          isHindi ? 'हिन्दी' : 'English',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -409,6 +394,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                               const SizedBox(width: 8),
+                              // Settings Button
                               Material(
                                 color: Colors.transparent,
                                 child: InkWell(
@@ -466,43 +452,81 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       const SizedBox(height: 18),
 
-                      // Interactive Weather Chip
+                      // Real Open-Meteo Weather Chip (No dummy values)
                       InkWell(
+                        key: const ValueKey('home_weather_chip'),
                         borderRadius: AppTheme.chipBorderRadius,
-                        onTap: () => _showWeatherSnackBar(l10n),
+                        onTap: () {
+                          WeatherDetailSheet.show(context, weatherService: _weatherService)
+                              .then((_) => _loadWeather());
+                        },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 14,
                             vertical: 8,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.1),
+                            color: Colors.white.withValues(alpha: 0.12),
                             borderRadius: AppTheme.chipBorderRadius,
                             border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.18),
+                              color: Colors.white.withValues(alpha: 0.22),
                               width: 1,
                             ),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(
-                                Icons.wb_sunny_rounded,
-                                color: Color(0xFFFFC107),
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: Text(
-                                  l10n.weatherChipSunny,
+                              if (_isLoadingWeather) ...[
+                                const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  isHindi ? 'मौसम लोड हो रहा है...' : 'Loading weather...',
                                   style: const TextStyle(
                                     color: AppTheme.textLight,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                   ),
-                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              ),
+                              ] else if (_weatherData != null) ...[
+                                Text(
+                                  _getWeatherEmoji(_weatherData!.weatherCode),
+                                  style: const TextStyle(fontSize: 18),
+                                ),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(
+                                    '${_weatherData!.temperature.round()}°C • ${_weatherData!.placeName}',
+                                    style: const TextStyle(
+                                      color: AppTheme.textLight,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ] else ...[
+                                const Icon(
+                                  Icons.cloud_outlined,
+                                  color: Colors.white70,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  isHindi ? 'मौसम देखें • टैप करें' : 'View Weather • Tap here',
+                                  style: const TextStyle(
+                                    color: AppTheme.textLight,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -510,11 +534,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       const SizedBox(height: 32),
 
-                      // Hero Circular Scan Button
+                      // Hero Circular Scan Button (Direct Camera Flow)
                       CircularScanButton(
                         key: const ValueKey('home_circular_scan_button'),
                         label: l10n.tapToScanLeaf,
-                        onTap: () => _proceedToScan(context, l10n),
+                        onTap: () => _proceedToScan(context),
                       ),
                     ],
                   ),
@@ -539,14 +563,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 14),
 
-                  // Card 1: Choose from Gallery
+                  // Card 1: Choose from Gallery (Directly triggers photo tips & gallery)
                   QuickActionCard(
                     icon: Icons.photo_library_rounded,
                     title: l10n.actionGalleryTitle,
                     subtitle: l10n.actionGallerySubtitle,
                     iconBgColor: AppTheme.leafGreenSubtle,
                     iconColor: AppTheme.forestGreen,
-                    onTap: () => _proceedToScan(context, l10n),
+                    onTap: () => _proceedToScan(context),
                   ),
 
                   // Card 2: Recent Scans History
@@ -579,7 +603,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
 
-      // 3. Bottom Navigation Bar (Home, History, Weather, Profile)
+      // 3. Bottom Navigation Bar (Home, History, Weather, Settings)
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: AppTheme.surfaceWhite,
@@ -608,12 +632,22 @@ class _HomeScreenState extends State<HomeScreen> {
               label: l10n.weatherNav,
             ),
             BottomNavigationBarItem(
-              icon: const Icon(Icons.person_outline_rounded),
-              label: l10n.profileNav,
+              icon: const Icon(Icons.settings_outlined),
+              label: l10n.settingsTitle,
             ),
           ],
         ),
       ),
     );
+  }
+
+  String _getWeatherEmoji(int code) {
+    if (code == 0) return '☀️';
+    if (code <= 3) return '⛅';
+    if (code <= 48) return '🌫️';
+    if (code <= 67) return '🌧️';
+    if (code <= 82) return '🌦️';
+    if (code >= 95) return '⛈️';
+    return '🌤️';
   }
 }

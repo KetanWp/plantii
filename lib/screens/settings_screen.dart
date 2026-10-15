@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/app_localizations.dart';
 import '../routes.dart';
 import '../services/consent_service.dart';
+import '../services/locale_provider.dart';
 import '../services/real_diagnosis_service.dart';
 import '../theme/app_theme.dart';
 
@@ -269,9 +271,70 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void _showChangeLanguageDialog(BuildContext context) {
+    final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
+    final isHindi = localeProvider.isHindi;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.language_rounded, color: AppTheme.forestGreen, size: 26),
+            const SizedBox(width: 10),
+            const Text(
+              'Select Language / भाषा चुनें',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              key: const ValueKey('settings_lang_hi'),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              tileColor: isHindi ? AppTheme.leafGreenSubtle : Colors.transparent,
+              leading: Icon(
+                isHindi ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
+                color: AppTheme.forestGreen,
+              ),
+              title: const Text('हिंदी', style: TextStyle(fontWeight: FontWeight.bold)),
+              trailing: const Text('Hindi', style: TextStyle(color: AppTheme.mutedDark, fontSize: 13)),
+              onTap: () async {
+                Navigator.pop(ctx);
+                await localeProvider.setLocale(const Locale('hi'));
+                if (mounted) setState(() {});
+              },
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              key: const ValueKey('settings_lang_en'),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              tileColor: !isHindi ? AppTheme.leafGreenSubtle : Colors.transparent,
+              leading: Icon(
+                !isHindi ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
+                color: AppTheme.forestGreen,
+              ),
+              title: const Text('English', style: TextStyle(fontWeight: FontWeight.bold)),
+              onTap: () async {
+                Navigator.pop(ctx);
+                await localeProvider.setLocale(const Locale('en'));
+                if (mounted) setState(() {});
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final localeProvider = Provider.of<LocaleProvider>(context);
+    final isHindi = localeProvider.isHindi;
 
     return Scaffold(
       backgroundColor: AppTheme.creamBackground,
@@ -282,6 +345,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
           children: [
+            // Section 0: Preferences / Language
+            _buildSectionHeader(isHindi ? 'प्राथमिकताएं' : 'Preferences'),
+            _buildSettingsCard([
+              _buildSettingsTile(
+                icon: Icons.language_rounded,
+                iconColor: AppTheme.forestGreen,
+                title: isHindi ? 'भाषा बदलें (Change Language)' : 'Change Language',
+                subtitle: isHindi ? 'वर्तमान: हिन्दी (Hindi)' : 'Current: English',
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppTheme.leafGreenSubtle,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppTheme.forestGreen.withValues(alpha: 0.2)),
+                  ),
+                  child: Text(
+                    isHindi ? 'हिन्दी' : 'EN',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.forestGreen,
+                    ),
+                  ),
+                ),
+                onTap: () => _showChangeLanguageDialog(context),
+              ),
+            ]),
+            const SizedBox(height: 24),
+
             // Section 1: Privacy & Legal
             _buildSectionHeader('Privacy & Compliance'),
             _buildSettingsCard([

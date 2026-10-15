@@ -96,7 +96,7 @@ class RealDiagnosisService {
   /// - [DiagnosisErrorType.aiFailed]
   Future<Diagnosis> diagnose({
     required File imageFile,
-    required String crop,
+    String crop = '',
     required String language,
   }) async {
     final bool isHindi = language.toLowerCase().trim() == 'hi';

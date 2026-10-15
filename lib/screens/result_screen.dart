@@ -421,8 +421,8 @@ class _ResultScreenState extends State<ResultScreen> {
     AppLocalizations l10n,
   ) {
     return [
-      // Disease name & Scientific name
-      _buildDiseaseHeader(diagnosis),
+      // Disease name, Detected Crop badge & Scientific name
+      _buildDiseaseHeader(diagnosis, languageCode),
       const SizedBox(height: 14),
 
       // Traffic-light severity & Confidence in words
@@ -553,11 +553,46 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
-  /// Disease Title and Scientific name header
-  Widget _buildDiseaseHeader(Diagnosis diagnosis) {
+  /// Disease Title, Detected Crop badge, and Scientific name header
+  Widget _buildDiseaseHeader(Diagnosis diagnosis, String languageCode) {
+    final isHindi = languageCode == 'hi';
+    final String cropDisplay = diagnosis.detectedCrop.isNotEmpty
+        ? diagnosis.detectedCrop
+        : (diagnosis.cropId.isNotEmpty
+            ? diagnosis.cropId
+            : (isHindi ? 'अज्ञात पौधा' : 'Unknown Plant'));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Detected Crop Badge
+        Container(
+          key: const ValueKey('detected_crop_badge'),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppTheme.leafGreenSubtle,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppTheme.forestGreen.withValues(alpha: 0.25)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.eco_rounded, size: 18, color: AppTheme.forestGreen),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  '${isHindi ? "पहचाना गया पौधा" : "Detected Crop"}: $cropDisplay',
+                  style: const TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.forestGreen,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
         Text(
           diagnosis.diseaseName,
           style: const TextStyle(
@@ -567,15 +602,17 @@ class _ResultScreenState extends State<ResultScreen> {
             height: 1.2,
           ),
         ),
-        const SizedBox(height: 4),
-        Text(
-          diagnosis.scientificName,
-          style: const TextStyle(
-            fontSize: 16,
-            fontStyle: FontStyle.italic,
-            color: AppTheme.mutedDark,
+        if (diagnosis.scientificName.isNotEmpty && diagnosis.scientificName != 'N/A') ...[
+          const SizedBox(height: 4),
+          Text(
+            diagnosis.scientificName,
+            style: const TextStyle(
+              fontSize: 16,
+              fontStyle: FontStyle.italic,
+              color: AppTheme.mutedDark,
+            ),
           ),
-        ),
+        ],
       ],
     );
   }

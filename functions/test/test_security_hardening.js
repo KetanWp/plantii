@@ -281,7 +281,25 @@ console.log('Test 6: Input Validation (Allowed Crops & Languages)');
   assert.strictEqual(goodCropReq.body.crop, 'tomato', 'Should normalize crop to lowercase');
   assert.strictEqual(goodCropReq.body.language, 'hi', 'Should normalize language to lowercase');
 
-  console.log('  Passed: Strict validation enforces allowed crops and languages');
+  // Test optional crop: missing crop passes
+  const { req: missingCropReq, res: missingCropRes } = createMockReqRes({
+    body: { language: 'en' },
+  });
+  let nextMissingCrop = false;
+  validateDiagnoseInputs(missingCropReq, missingCropRes, () => { nextMissingCrop = true; });
+  assert.strictEqual(nextMissingCrop, true, 'Should accept missing crop');
+  assert.strictEqual(missingCropReq.body.crop, '', 'Should normalize missing crop to empty string');
+
+  // Test optional crop: empty crop string passes
+  const { req: emptyCropReq, res: emptyCropRes } = createMockReqRes({
+    body: { crop: '   ', language: 'hi' },
+  });
+  let nextEmptyCrop = false;
+  validateDiagnoseInputs(emptyCropReq, emptyCropRes, () => { nextEmptyCrop = true; });
+  assert.strictEqual(nextEmptyCrop, true, 'Should accept empty crop string');
+  assert.strictEqual(emptyCropReq.body.crop, '', 'Should normalize empty crop to empty string');
+
+  console.log('  Passed: Strict validation enforces allowed crops and languages, accepting optional/missing crop');
 }
 
 // ============================================================================

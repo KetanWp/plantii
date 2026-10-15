@@ -152,6 +152,7 @@ function createDiagnoseHandler(getApiKey) {
       return res.status(200).json({
         id: savedScan.id,
         cropId: savedScan.cropId,
+        detectedCrop: savedScan.detectedCrop || diagnosisResult.detectedCrop || 'Unknown Plant',
         status: savedScan.status || diagnosisResult.status || 'diseased',
         diseaseName: savedScan.diseaseName,
         scientificName: savedScan.scientificName,
@@ -174,7 +175,8 @@ function createDiagnoseHandler(getApiKey) {
       // Even if Firestore save had an issue, return diagnosis result so user gets their answer
       return res.status(200).json({
         id: `scan_${Date.now()}`,
-        cropId: crop,
+        cropId: crop || diagnosisResult.detectedCrop || 'general_crop',
+        detectedCrop: diagnosisResult.detectedCrop || 'Unknown Plant',
         status: diagnosisResult.status || 'diseased',
         diseaseName: diagnosisResult.diseaseName,
         scientificName: diagnosisResult.scientificName || 'N/A',

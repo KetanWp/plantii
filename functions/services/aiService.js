@@ -26,6 +26,7 @@ const { safeLogger } = require('../middleware/sanitizeLogs');
  */
 const BaseDiagnosisSchema = z.object({
   status: z.enum(['diseased', 'healthy', 'not_a_plant', 'poor_photo']),
+  detectedCrop: z.string().default('Unknown Plant'),
   diseaseName: z.string().default(''),
   scientificName: z.string().default(''),
   severity: z.enum(['mild', 'moderate', 'severe']).optional().or(z.literal('')).or(z.literal('none')),
@@ -116,6 +117,10 @@ const geminiResponseSchema = {
     status: {
       type: Type.STRING,
       enum: ['diseased', 'healthy', 'not_a_plant', 'poor_photo'],
+    },
+    detectedCrop: {
+      type: Type.STRING,
+      description: 'The crop or plant species identified from the leaf image (e.g. Tomato, Rice, Wheat), or "Unknown Plant" if botanical species is ambiguous, or "None" if not a plant.',
     },
     diseaseName: { type: Type.STRING },
     scientificName: { type: Type.STRING },
@@ -211,6 +216,7 @@ function parseAndValidateDiagnosis(rawText) {
   }
 
   // Default empty arrays and strings if not provided
+  parsed.detectedCrop = parsed.detectedCrop || 'Unknown Plant';
   parsed.immediateActions = parsed.immediateActions || [];
   parsed.organicTreatments = parsed.organicTreatments || [];
   parsed.chemicalTreatments = parsed.chemicalTreatments || [];

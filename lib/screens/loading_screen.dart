@@ -75,14 +75,21 @@ class _LoadingScreenState extends State<LoadingScreen> {
         language: languageCode,
       );
 
+      final effectiveCrop = diagnosis.detectedCrop.isNotEmpty
+          ? diagnosis.detectedCrop
+          : (cropName != null && cropName.isNotEmpty
+              ? cropName
+              : (cropId.isNotEmpty ? cropId : 'Plant'));
+
       // Persist to local offline history so it remains accessible without internet
       final scanRecord = ScanRecord(
         id: diagnosis.id.isNotEmpty
             ? diagnosis.id
             : 'scan_${DateTime.now().millisecondsSinceEpoch}',
         photoPath: imagePath,
-        cropId: cropId,
-        cropName: cropName ?? cropId,
+        cropId: cropId.isNotEmpty ? cropId : 'plant',
+        cropName: effectiveCrop,
+        detectedCrop: diagnosis.detectedCrop.isNotEmpty ? diagnosis.detectedCrop : effectiveCrop,
         diseaseName: diagnosis.diseaseName,
         severity: diagnosis.severity,
         scannedAt: DateTime.now(),
@@ -98,7 +105,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
         arguments: {
           'diagnosis': diagnosis,
           'imagePath': imagePath,
-          'cropName': cropName,
+          'cropName': effectiveCrop,
         },
       );
     } on DiagnosisException catch (e) {
