@@ -52,8 +52,6 @@ class _CameraScreenState extends State<CameraScreen> {
         AppRoutes.loading,
         arguments: {
           'imagePath': compressed.path,
-          'cropId': '',
-          'cropName': '',
         },
       );
     } else {

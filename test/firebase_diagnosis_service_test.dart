@@ -60,7 +60,7 @@ void main() {
         expect(request.headers['Content-Type'], 'application/json');
 
         final body = jsonDecode(request.body) as Map<String, dynamic>;
-        expect(body['crop'], 'tomato');
+        expect(body.containsKey('crop'), isFalse);
         expect(body['language'], 'en');
         expect(body['image'], isNotEmpty);
 
@@ -79,6 +79,8 @@ void main() {
             'safetyNote': 'Wear gloves when handling chemical spray.',
             'preventionTips': ['Crop rotation every 2 years'],
             'language': 'en',
+            'spokenSummary': 'Tomato early blight detected. Remove infected leaves immediately.',
+            'fromCache': false,
           }),
           200,
           headers: {'content-type': 'application/json'},
@@ -93,7 +95,6 @@ void main() {
 
       final diagnosis = await service.diagnose(
         imageFile: sampleImageFile,
-        crop: 'tomato',
         language: 'en',
       );
 
@@ -105,6 +106,54 @@ void main() {
       expect(diagnosis.immediateActions, ['Isolate infected plant']);
       expect(diagnosis.organicTreatments, ['Spray neem extract']);
       expect(diagnosis.chemicalTreatments, ['Apply Mancozeb 75% WP']);
+      expect(diagnosis.spokenSummary, contains('early blight'));
+    });
+
+    test('passes optional cropHint and forceRefresh parameters in request body', () async {
+      bool passedHint = false;
+      bool passedRefresh = false;
+
+      final mockHttpClient = MockClient((request) async {
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        if (body['cropHint'] == 'Cotton') passedHint = true;
+        if (body['forceRefresh'] == true) passedRefresh = true;
+
+        return http.Response(
+          jsonEncode({
+            'id': 'scan_hint_1',
+            'status': 'diseased',
+            'diseaseName': 'Cotton Leaf Curl',
+            'confidenceLevel': 'High (90%)',
+            'description': 'Curled leaves',
+            'immediateActions': [],
+            'organicTreatments': [],
+            'chemicalTreatments': [],
+            'safetyNote': '',
+            'preventionTips': [],
+            'language': 'en',
+            'fromCache': false,
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+
+      final service = RealDiagnosisService(
+        baseUrl: 'https://example.com/api',
+        httpClient: mockHttpClient,
+        authService: MockTestAuthService(),
+      );
+
+      final diag = await service.diagnose(
+        imageFile: sampleImageFile,
+        language: 'en',
+        cropHint: 'Cotton',
+        forceRefresh: true,
+      );
+
+      expect(passedHint, isTrue);
+      expect(passedRefresh, isTrue);
+      expect(diag.diseaseName, 'Cotton Leaf Curl');
     });
 
     test('throws DiagnosisErrorType.timeout on 504 status', () async {
@@ -130,7 +179,6 @@ void main() {
       expect(
         () => service.diagnose(
           imageFile: sampleImageFile,
-          crop: 'potato',
           language: 'en',
         ),
         throwsA(
@@ -166,7 +214,6 @@ void main() {
       expect(
         () => service.diagnose(
           imageFile: sampleImageFile,
-          crop: 'rice',
           language: 'hi',
         ),
         throwsA(
@@ -202,7 +249,6 @@ void main() {
       expect(
         () => service.diagnose(
           imageFile: sampleImageFile,
-          crop: 'tomato',
           language: 'en',
         ),
         throwsA(
@@ -238,7 +284,6 @@ void main() {
       expect(
         () => service.diagnose(
           imageFile: sampleImageFile,
-          crop: 'wheat',
           language: 'en',
         ),
         throwsA(
@@ -261,7 +306,6 @@ void main() {
       expect(
         () => service.diagnose(
           imageFile: sampleImageFile,
-          crop: 'wheat',
           language: 'hi',
         ),
         throwsA(

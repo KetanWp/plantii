@@ -91,8 +91,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               AppRoutes.loading,
               arguments: {
                 'imagePath': compressed.path,
-                'cropId': '',
-                'cropName': '',
               },
             );
           }
@@ -138,12 +136,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         });
         break;
       case 2:
-        WeatherDetailSheet.show(context, weatherService: _weatherService).then((_) {
-          _loadWeather();
-          if (mounted) setState(() => _selectedNavIndex = 0);
-        });
-        break;
-      case 3:
         Navigator.pushNamed(context, AppRoutes.settings).then((_) {
           if (mounted) setState(() => _selectedNavIndex = 0);
         });
@@ -176,8 +168,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         AppRoutes.loading,
         arguments: {
           'imagePath': photoFile.path,
-          'cropId': '',
-          'cropName': '',
         },
       );
     }
@@ -323,33 +313,41 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(7),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(12),
+                          Flexible(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(7),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.eco_rounded,
+                                    color: AppTheme.leafGreenAccent,
+                                    size: 24,
+                                  ),
                                 ),
-                                child: const Icon(
-                                  Icons.eco_rounded,
-                                  color: AppTheme.leafGreenAccent,
-                                  size: 24,
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(
+                                    l10n.appTitle,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: AppTheme.textLight,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: -0.3,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 10),
-                              Text(
-                                l10n.appTitle,
-                                style: const TextStyle(
-                                  color: AppTheme.textLight,
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: -0.3,
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
+                          const SizedBox(width: 6),
                           Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               // Language Toggle Button
                               Material(
@@ -360,8 +358,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                   onTap: () => _showLanguageDialog(context),
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
+                                      horizontal: 8,
+                                      vertical: 5,
                                     ),
                                     decoration: BoxDecoration(
                                       color: Colors.white.withValues(alpha: 0.12),
@@ -377,15 +375,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                         const Icon(
                                           Icons.language_rounded,
                                           color: Colors.white,
-                                          size: 18,
+                                          size: 16,
                                         ),
-                                        const SizedBox(width: 6),
+                                        const SizedBox(width: 4),
                                         Text(
                                           isHindi ? 'हिन्दी' : 'English',
                                           style: const TextStyle(
                                             color: Colors.white,
                                             fontWeight: FontWeight.bold,
-                                            fontSize: 13,
+                                            fontSize: 12.5,
                                           ),
                                         ),
                                       ],
@@ -452,83 +450,211 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
                       const SizedBox(height: 18),
 
-                      // Real Open-Meteo Weather Chip (No dummy values)
+                      // Compact Real-Weather Card (Tapping opens full weather screen)
                       InkWell(
-                        key: const ValueKey('home_weather_chip'),
-                        borderRadius: AppTheme.chipBorderRadius,
+                        key: const ValueKey('home_weather_card'),
+                        borderRadius: BorderRadius.circular(16),
                         onTap: () {
                           WeatherDetailSheet.show(context, weatherService: _weatherService)
                               .then((_) => _loadWeather());
                         },
                         child: Container(
+                          width: double.infinity,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 14,
-                            vertical: 8,
+                            vertical: 10,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.12),
-                            borderRadius: AppTheme.chipBorderRadius,
+                            color: Colors.white.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: Colors.white.withValues(alpha: 0.22),
                               width: 1,
                             ),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (_isLoadingWeather) ...[
-                                const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  isHindi ? 'मौसम लोड हो रहा है...' : 'Loading weather...',
-                                  style: const TextStyle(
-                                    color: AppTheme.textLight,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ] else if (_weatherData != null) ...[
-                                Text(
-                                  _getWeatherEmoji(_weatherData!.weatherCode),
-                                  style: const TextStyle(fontSize: 18),
-                                ),
-                                const SizedBox(width: 8),
-                                Flexible(
-                                  child: Text(
-                                    '${_weatherData!.temperature.round()}°C • ${_weatherData!.placeName}',
-                                    style: const TextStyle(
-                                      color: AppTheme.textLight,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
+                          child: _isLoadingWeather
+                              ? Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
                                     ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ] else ...[
-                                const Icon(
-                                  Icons.cloud_outlined,
-                                  color: Colors.white70,
-                                  size: 18,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  isHindi ? 'मौसम देखें • टैप करें' : 'View Weather • Tap here',
-                                  style: const TextStyle(
-                                    color: AppTheme.textLight,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
+                                    const SizedBox(width: 10),
+                                    Flexible(
+                                      child: Text(
+                                        isHindi ? 'मौसम लोड हो रहा है...' : 'Loading weather...',
+                                        style: const TextStyle(
+                                          color: AppTheme.textLight,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : _weatherData != null
+                                  ? Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Expanded(
+                                              child: Row(
+                                                children: [
+                                                  Text(
+                                                    _getWeatherEmoji(_weatherData!.weatherCode),
+                                                    style: const TextStyle(fontSize: 20),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Text(
+                                                    '${_weatherData!.temperature.round()}°C',
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 18,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Expanded(
+                                                    child: Text(
+                                                      _weatherData!.placeName,
+                                                      style: const TextStyle(
+                                                        color: Colors.white70,
+                                                        fontSize: 13,
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    const Icon(
+                                                      Icons.water_drop_outlined,
+                                                      size: 14,
+                                                      color: AppTheme.leafGreenAccent,
+                                                    ),
+                                                    const SizedBox(width: 2),
+                                                    Text(
+                                                      '${_weatherData!.humidity}%',
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 12,
+                                                        fontWeight: FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Row(
+                                                  children: [
+                                                    const Icon(
+                                                      Icons.umbrella_outlined,
+                                                      size: 14,
+                                                      color: Colors.lightBlueAccent,
+                                                    ),
+                                                    const SizedBox(width: 2),
+                                                    Text(
+                                                      '${_weatherData!.rainChance}%',
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 12,
+                                                        fontWeight: FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 6,
+                                                vertical: 2,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: _getRiskBadgeColor(_weatherData!.diseaseRiskLevel),
+                                                borderRadius: BorderRadius.circular(6),
+                                              ),
+                                              child: Text(
+                                                _getRiskLabel(_weatherData!.diseaseRiskLevel, isHindi),
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Expanded(
+                                              child: Text(
+                                                isHindi
+                                                    ? _weatherData!.diseaseRiskHintHi
+                                                    : _weatherData!.diseaseRiskHintEn,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                            const Icon(
+                                              Icons.chevron_right,
+                                              size: 16,
+                                              color: Colors.white70,
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    )
+                                  : Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.cloud_outlined,
+                                          color: Colors.white70,
+                                          size: 18,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            isHindi
+                                                ? 'मौसम और रोग जोखिम देखें • टैप करें'
+                                                : 'View weather & disease risk • Tap here',
+                                            style: const TextStyle(
+                                              color: AppTheme.textLight,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        const Icon(
+                                          Icons.chevron_right,
+                                          size: 16,
+                                          color: Colors.white70,
+                                        ),
+                                      ],
+                                    ),
                         ),
                       ),
 
@@ -603,7 +729,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ),
       ),
 
-      // 3. Bottom Navigation Bar (Home, History, Weather, Settings)
+      // 3. Bottom Navigation Bar (Home, History, Settings only)
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: AppTheme.surfaceWhite,
@@ -628,10 +754,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               label: l10n.historyNav,
             ),
             BottomNavigationBarItem(
-              icon: const Icon(Icons.wb_sunny_outlined),
-              label: l10n.weatherNav,
-            ),
-            BottomNavigationBarItem(
               icon: const Icon(Icons.settings_outlined),
               label: l10n.settingsTitle,
             ),
@@ -649,5 +771,27 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (code <= 82) return '🌦️';
     if (code >= 95) return '⛈️';
     return '🌤️';
+  }
+
+  Color _getRiskBadgeColor(String level) {
+    switch (level.toLowerCase()) {
+      case 'high':
+        return const Color(0xFFD32F2F);
+      case 'moderate':
+        return const Color(0xFFE65100);
+      default:
+        return const Color(0xFF2E7D32);
+    }
+  }
+
+  String _getRiskLabel(String level, bool isHindi) {
+    switch (level.toLowerCase()) {
+      case 'high':
+        return isHindi ? 'उच्च जोखिम' : 'High Risk';
+      case 'moderate':
+        return isHindi ? 'मध्यम जोखिम' : 'Moderate';
+      default:
+        return isHindi ? 'कम जोखिम' : 'Low Risk';
+    }
   }
 }

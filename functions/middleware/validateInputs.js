@@ -1,7 +1,8 @@
 /**
  * Input Validation Middleware
  *
- * Enforces strict validation for crop types and languages against allowed lists.
+ * Enforces validation for languages, optional cropHint, and forceRefresh flags.
+ * Does NOT require or validate crop type (crops are auto-identified by AI).
  */
 
 const limits = require('../config/limits');
@@ -28,24 +29,16 @@ function validateDiagnoseInputs(req, res, next) {
     req.body.language = 'en';
   }
 
-  // 2. Crop validation (optional - accepts missing or empty string)
-  const rawCrop = req.body?.crop;
-  if (rawCrop !== undefined && rawCrop !== null && String(rawCrop).trim().length > 0) {
-    const crop = String(rawCrop).toLowerCase().trim();
-    if (limits.allowedCrops && limits.allowedCrops.length > 0 && !limits.allowedCrops.includes(crop) && crop !== 'auto' && crop !== 'general') {
-      return res.status(400).json({
-        error: {
-          code: 'bad_request',
-          message: isHindi
-            ? `अमान्य फसल "${rawCrop}"। समर्थित फसलें: ${limits.allowedCrops.join(', ')}`
-            : `Unsupported crop type "${rawCrop}". Supported crops: ${limits.allowedCrops.join(', ')}`,
-        },
-      });
-    }
-    req.body.crop = crop;
+  // 2. Optional cropHint validation (item 7d)
+  const rawCropHint = req.body?.cropHint;
+  if (rawCropHint !== undefined && rawCropHint !== null && String(rawCropHint).trim().length > 0) {
+    req.body.cropHint = String(rawCropHint).trim().substring(0, 50);
   } else {
-    req.body.crop = '';
+    req.body.cropHint = '';
   }
+
+  // 3. Optional forceRefresh flag (item 7b)
+  req.body.forceRefresh = Boolean(req.body?.forceRefresh === true || req.body?.forceRefresh === 'true');
 
   next();
 }

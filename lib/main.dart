@@ -69,6 +69,17 @@ class PlantiiApp extends StatelessWidget {
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             initialRoute: startRoute,
             routes: AppRoutes.routes,
+            builder: (context, child) {
+              final mediaQuery = MediaQuery.of(context);
+              final clampedScaler = mediaQuery.textScaler.clamp(
+                minScaleFactor: 0.9,
+                maxScaleFactor: 1.25,
+              );
+              return MediaQuery(
+                data: mediaQuery.copyWith(textScaler: clampedScaler),
+                child: child ?? const SizedBox.shrink(),
+              );
+            },
           );
         },
       ),

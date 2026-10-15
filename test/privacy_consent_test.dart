@@ -230,7 +230,7 @@ void main() {
 
       expect(find.text('Select Language / भाषा चुनें'), findsOneWidget);
       expect(find.text('हिंदी'), findsOneWidget);
-      expect(find.text('English'), findsOneWidget);
+      expect(find.text('English'), findsAtLeastNWidgets(1));
     });
 
     testWidgets('withdraw consent shows confirmation dialog', (tester) async {

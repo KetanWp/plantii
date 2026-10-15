@@ -96,8 +96,11 @@ class RealDiagnosisService {
   /// - [DiagnosisErrorType.aiFailed]
   Future<Diagnosis> diagnose({
     required File imageFile,
-    String crop = '',
     required String language,
+    String? cropHint,
+    bool forceRefresh = false,
+    @Deprecated('Crops are auto-identified by AI; use cropHint if farmer confirms crop')
+    String? crop,
   }) async {
     final bool isHindi = language.toLowerCase().trim() == 'hi';
 
@@ -140,7 +143,7 @@ class RealDiagnosisService {
       );
     }
 
-    // 3. Prepare payload with base64 encoded image
+    // 3. Prepare payload with base64 encoded image (Do not send crop)
     final Uint8List imageBytes = imageFile.readAsBytesSync();
     final String base64Image = base64Encode(imageBytes);
 
@@ -149,11 +152,20 @@ class RealDiagnosisService {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $idToken',
     };
-    final String requestBody = jsonEncode({
-      'crop': crop.toLowerCase().trim(),
+    final Map<String, dynamic> payload = {
       'language': isHindi ? 'hi' : 'en',
       'image': base64Image,
-    });
+    };
+    final effectiveHint = (cropHint != null && cropHint.trim().isNotEmpty)
+        ? cropHint.trim()
+        : '';
+    if (effectiveHint.isNotEmpty) {
+      payload['cropHint'] = effectiveHint;
+    }
+    if (forceRefresh) {
+      payload['forceRefresh'] = true;
+    }
+    final String requestBody = jsonEncode(payload);
 
     // 4. Send HTTP request with 60s timeout
     http.Response response;

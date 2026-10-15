@@ -7,7 +7,7 @@
     "serve": "firebase emulators:start --only functions,firestore,auth",
     "shell": "firebase functions:shell",
     "start": "npm run shell",
-    "test": "node test/test_units.js && node test/test_security_hardening.js && node test/test_account_deletion.js",
+    "test": "node test/test_units.js && node test/test_security_hardening.js && node test/test_account_deletion.js && node test/test_caching_and_crop.js",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log"
   },

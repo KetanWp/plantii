@@ -8,12 +8,17 @@ console.log('Running Crop Doctor Backend Unit Tests...\n');
 
 // 1. Test Prompt Generation
 console.log('Test 1: Diagnosis Prompt Generation');
-const enPrompt = getDiagnosisPrompt({ crop: 'tomato', language: 'en' });
-assert(enPrompt.includes('TARGET CROP: tomato'), 'English prompt should mention tomato');
-assert(enPrompt.includes('severity'), 'Prompt should describe severity');
+const autoPrompt = getDiagnosisPrompt({ language: 'en' });
+assert(autoPrompt.includes('AUTOMATIC CROP IDENTIFICATION'), 'English prompt should mention automatic crop identification');
+assert(autoPrompt.includes('spokenSummary'), 'English prompt should mention spokenSummary');
+assert(autoPrompt.includes('cropConfidence'), 'English prompt should mention cropConfidence');
 
-const hiPrompt = getDiagnosisPrompt({ crop: 'potato', language: 'hi' });
+const hintPrompt = getDiagnosisPrompt({ cropHint: 'Tomato', language: 'en' });
+assert(hintPrompt.includes('FARMER CONFIRMED CROP: "Tomato"'), 'Prompt with cropHint should include confirmed crop');
+
+const hiPrompt = getDiagnosisPrompt({ language: 'hi' });
 assert(hiPrompt.includes('देवनागरी लिपि'), 'Hindi prompt should include Hindi instructions');
+assert(hiPrompt.includes('spokenSummary'), 'Prompt should mention spokenSummary');
 console.log('  Passed: Prompt generation tests');
 
 // 2. Test Zod Diagnosis Schema Validation
@@ -23,6 +28,7 @@ console.log('Test 2: Schema Validation (diseased, healthy, not_a_plant, poor_pho
 const diseasedJson = JSON.stringify({
   status: 'diseased',
   detectedCrop: 'Tomato',
+  cropConfidence: 'very_likely',
   diseaseName: 'Early Blight',
   scientificName: 'Alternaria solani',
   severity: 'moderate',
@@ -34,12 +40,14 @@ const diseasedJson = JSON.stringify({
   safetyNote: 'Wear gloves and face mask while spraying fungicides.',
   prevention: ['Ensure proper plant spacing for aeration', 'Rotate crops every 2-3 seasons'],
   photoQuality: 'good',
-  possibleCauses: ['Fungal spores surviving in soil', 'High relative humidity and warm temperatures']
+  possibleCauses: ['Fungal spores surviving in soil', 'High relative humidity and warm temperatures'],
+  spokenSummary: 'टमाटर के पौधे में अगेती झुलसा रोग लगा है। यह मध्यम रूप से गंभीर है। तुरंत प्रभावित पत्तों को तोड़कर नष्ट कर दें। छिड़काव करते समय मास्क और दस्ताने अवश्य पहनें।'
 });
 
 const validatedDiseased = parseAndValidateDiagnosis(diseasedJson);
 assert.strictEqual(validatedDiseased.status, 'diseased');
 assert.strictEqual(validatedDiseased.detectedCrop, 'Tomato');
+assert.strictEqual(validatedDiseased.cropConfidence, 'very_likely');
 assert.strictEqual(validatedDiseased.diseaseName, 'Early Blight');
 assert.strictEqual(validatedDiseased.severity, 'moderate');
 assert.strictEqual(validatedDiseased.confidence, 'very_likely');
@@ -47,11 +55,13 @@ assert.strictEqual(validatedDiseased.confidenceLevel, 'very_likely');
 assert.strictEqual(validatedDiseased.immediateActions.length, 2);
 assert.strictEqual(validatedDiseased.organicTreatments.length, 2);
 assert.strictEqual(validatedDiseased.chemicalTreatments.length, 2);
+assert(validatedDiseased.spokenSummary.length > 10, 'Spoken summary should be present');
 
 // 2b. Healthy valid case (empty treatments and blank diseaseName are valid)
 const healthyJson = JSON.stringify({
   status: 'healthy',
   detectedCrop: 'Wheat',
+  cropConfidence: 'likely',
   diseaseName: '',
   scientificName: '',
   severity: 'none',
@@ -63,11 +73,13 @@ const healthyJson = JSON.stringify({
   safetyNote: '',
   prevention: [],
   photoQuality: 'good',
-  possibleCauses: []
+  possibleCauses: [],
+  spokenSummary: 'आपकी गेहूं की फसल पूरी तरह स्वस्थ है। उचित समय पर सिंचाई करते रहें।'
 });
 const validatedHealthy = parseAndValidateDiagnosis(healthyJson);
 assert.strictEqual(validatedHealthy.status, 'healthy');
 assert.strictEqual(validatedHealthy.detectedCrop, 'Wheat');
+assert.strictEqual(validatedHealthy.cropConfidence, 'likely');
 assert.strictEqual(validatedHealthy.confidence, 'very_likely');
 assert.strictEqual(validatedHealthy.diseaseName, '');
 assert.strictEqual(validatedHealthy.organicTreatments.length, 0);
@@ -76,6 +88,7 @@ assert.strictEqual(validatedHealthy.organicTreatments.length, 0);
 const notPlantJson = JSON.stringify({
   status: 'not_a_plant',
   detectedCrop: 'None',
+  cropConfidence: 'very_likely',
   diseaseName: '',
   scientificName: '',
   confidence: 'very_likely',
@@ -86,7 +99,8 @@ const notPlantJson = JSON.stringify({
   safetyNote: '',
   prevention: [],
   photoQuality: 'poor',
-  possibleCauses: []
+  possibleCauses: [],
+  spokenSummary: 'यह फोटो किसी पौधे या पत्ती की नहीं है।'
 });
 const validatedNotPlant = parseAndValidateDiagnosis(notPlantJson);
 assert.strictEqual(validatedNotPlant.status, 'not_a_plant');
@@ -97,6 +111,7 @@ assert.strictEqual(validatedNotPlant.confidence, 'very_likely');
 const poorPhotoJson = JSON.stringify({
   status: 'poor_photo',
   detectedCrop: 'Unknown / Unclear',
+  cropConfidence: 'possible',
   diseaseName: '',
   scientificName: '',
   confidence: 'very_likely',
@@ -107,11 +122,13 @@ const poorPhotoJson = JSON.stringify({
   safetyNote: '',
   prevention: [],
   photoQuality: 'poor',
-  possibleCauses: []
+  possibleCauses: [],
+  spokenSummary: 'फोटो बहुत धुंधली है। कृपया पास से साफ फोटो दोबारा लें।'
 });
 const validatedPoorPhoto = parseAndValidateDiagnosis(poorPhotoJson);
 assert.strictEqual(validatedPoorPhoto.status, 'poor_photo');
 assert.strictEqual(validatedPoorPhoto.detectedCrop, 'Unknown / Unclear');
+assert.strictEqual(validatedPoorPhoto.cropConfidence, 'possible');
 assert.strictEqual(validatedPoorPhoto.photoQuality, 'poor');
 
 // 2d-2. Test default fallback if detectedCrop is omitted
@@ -124,6 +141,8 @@ const omittedCropJson = JSON.stringify({
 });
 const validatedOmitted = parseAndValidateDiagnosis(omittedCropJson);
 assert.strictEqual(validatedOmitted.detectedCrop, 'Unknown Plant', 'Should default to Unknown Plant if omitted');
+assert.strictEqual(validatedOmitted.cropConfidence, 'likely', 'Should default to likely if omitted');
+assert(validatedOmitted.spokenSummary.length > 0, 'Should generate fallback spokenSummary');
 
 // 2e. Markdown wrapped JSON strip
 const markdownWrappedJson = `\`\`\`json\n${diseasedJson}\n\`\`\``;

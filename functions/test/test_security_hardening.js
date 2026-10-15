@@ -257,49 +257,42 @@ console.log('Test 5: Failed AI Call Refunds the Count');
 }
 
 // ============================================================================
-// TEST 6: Input Validation (Allowed Crops & Languages)
+// TEST 6: Input Validation (Allowed Languages, Missing Crop, cropHint & forceRefresh)
 // ============================================================================
-console.log('Test 6: Input Validation (Allowed Crops & Languages)');
+console.log('Test 6: Input Validation (Allowed Languages & Optional cropHint/forceRefresh)');
 {
-  // Test invalid crop
-  const { req: badCropReq, res: badCropRes } = createMockReqRes({
-    body: { crop: 'pineapple_invalid', language: 'en' },
+  // Test invalid language rejected
+  const { req: badLangReq, res: badLangRes } = createMockReqRes({
+    body: { language: 'unsupported_lang' },
   });
-  let nextBadCrop = false;
-  validateDiagnoseInputs(badCropReq, badCropRes, () => { nextBadCrop = true; });
-  assert.strictEqual(nextBadCrop, false, 'Should reject invalid crop');
-  assert.strictEqual(badCropRes.statusCode, 400);
-  assert.strictEqual(badCropRes.body?.error?.code, 'bad_request');
+  let nextBadLang = false;
+  validateDiagnoseInputs(badLangReq, badLangRes, () => { nextBadLang = true; });
+  assert.strictEqual(nextBadLang, false, 'Should reject invalid language');
+  assert.strictEqual(badLangRes.statusCode, 400);
+  assert.strictEqual(badLangRes.body?.error?.code, 'bad_request');
 
-  // Test valid crop
-  const { req: goodCropReq, res: goodCropRes } = createMockReqRes({
-    body: { crop: 'Tomato', language: 'HI' },
+  // Test missing crop is accepted (crops are auto-identified)
+  const { req: noCropReq, res: noCropRes } = createMockReqRes({
+    body: { language: 'HI' },
   });
-  let nextGoodCrop = false;
-  validateDiagnoseInputs(goodCropReq, goodCropRes, () => { nextGoodCrop = true; });
-  assert.strictEqual(nextGoodCrop, true, 'Should accept valid crop and language');
-  assert.strictEqual(goodCropReq.body.crop, 'tomato', 'Should normalize crop to lowercase');
-  assert.strictEqual(goodCropReq.body.language, 'hi', 'Should normalize language to lowercase');
+  let nextNoCrop = false;
+  validateDiagnoseInputs(noCropReq, noCropRes, () => { nextNoCrop = true; });
+  assert.strictEqual(nextNoCrop, true, 'Should accept request with no crop specified');
+  assert.strictEqual(noCropReq.body.language, 'hi', 'Should normalize language to lowercase');
+  assert.strictEqual(noCropReq.body.cropHint, '', 'cropHint should default to empty string');
+  assert.strictEqual(noCropReq.body.forceRefresh, false, 'forceRefresh should default to false');
 
-  // Test optional crop: missing crop passes
-  const { req: missingCropReq, res: missingCropRes } = createMockReqRes({
-    body: { language: 'en' },
+  // Test optional cropHint and forceRefresh pass through
+  const { req: hintReq, res: hintRes } = createMockReqRes({
+    body: { cropHint: '  Tomato  ', forceRefresh: true, language: 'en' },
   });
-  let nextMissingCrop = false;
-  validateDiagnoseInputs(missingCropReq, missingCropRes, () => { nextMissingCrop = true; });
-  assert.strictEqual(nextMissingCrop, true, 'Should accept missing crop');
-  assert.strictEqual(missingCropReq.body.crop, '', 'Should normalize missing crop to empty string');
+  let nextHint = false;
+  validateDiagnoseInputs(hintReq, hintRes, () => { nextHint = true; });
+  assert.strictEqual(nextHint, true, 'Should accept optional cropHint');
+  assert.strictEqual(hintReq.body.cropHint, 'Tomato', 'Should trim cropHint');
+  assert.strictEqual(hintReq.body.forceRefresh, true, 'Should parse forceRefresh as true');
 
-  // Test optional crop: empty crop string passes
-  const { req: emptyCropReq, res: emptyCropRes } = createMockReqRes({
-    body: { crop: '   ', language: 'hi' },
-  });
-  let nextEmptyCrop = false;
-  validateDiagnoseInputs(emptyCropReq, emptyCropRes, () => { nextEmptyCrop = true; });
-  assert.strictEqual(nextEmptyCrop, true, 'Should accept empty crop string');
-  assert.strictEqual(emptyCropReq.body.crop, '', 'Should normalize empty crop to empty string');
-
-  console.log('  Passed: Strict validation enforces allowed crops and languages, accepting optional/missing crop');
+  console.log('  Passed: Strict validation enforces allowed languages, accepts missing crop, and handles cropHint/forceRefresh');
 }
 
 // ============================================================================

@@ -2,17 +2,21 @@
  * POST /diagnose route handler
  *
  * Coordinates:
- * 1. Global Daily Cap check & atomic transaction on stats/{date}
- * 2. User Daily Limit check & atomic transaction on users/{uid} (Asia/Kolkata timezone)
- * 3. Gemini Vision AI analysis (~45s timeout)
- * 4. Automatic scan quota refund on AI failure
- * 5. Firestore persistence in 'scans' collection
- * 6. Preserves exact Diagnosis response format
+ * 1. Image SHA-256 computation & 7-day Cache lookup (users/{uid}/scanCache/{key})
+ *    - Cache hit returns immediately with fromCache: true (NO AI call, NO quota consumed)
+ * 2. Force-refresh & crop correction handling (cropHint re-runs do not consume user quota)
+ * 3. Global Daily Cap check & atomic transaction on stats/{date}
+ * 4. User Daily Limit check & atomic transaction on users/{uid} (Asia/Kolkata timezone)
+ * 5. Gemini Vision AI analysis (~45s timeout, determinism: temp 0, topK 1, seed 42)
+ * 6. Automatic scan quota refund on AI failure
+ * 7. Firestore persistence in 'scans' collection and 'scanCache' subcollection
+ * 8. Returns structured diagnosis matching client model format
  */
 
+const crypto = require('crypto');
 const limits = require('../config/limits');
 const { analyzeCropLeaf } = require('../services/aiService');
-const { saveScanRecord } = require('../services/firestoreService');
+const { saveScanRecord, saveScanCache, getScanCache } = require('../services/firestoreService');
 const {
   checkAndIncrementGlobalDailyCap,
   checkAndIncrementUserDailyLimit,
@@ -28,13 +32,40 @@ const { safeLogger } = require('../middleware/sanitizeLogs');
 function createDiagnoseHandler(getApiKey) {
   return async function handleDiagnose(req, res) {
     const userId = req.user.uid;
-    const crop = req.body.crop;
-    const language = req.body.language;
+    const language = req.body.language || 'en';
     const isHindi = language === 'hi';
+    const cropHint = (req.body.cropHint || '').trim();
+    const forceRefresh = Boolean(req.body.forceRefresh === true || req.body.forceRefresh === 'true');
     const { buffer: imageBuffer, mimeType } = req.parsedImage;
     const todayDateStr = getKolkataDateString();
 
-    // 1. Check Global Daily Cap across all users (Emergency Brake)
+    // 1. Compute SHA-256 hash of image bytes
+    const imageHash = crypto.createHash('sha256').update(imageBuffer).digest('hex');
+    const cacheKey = cropHint
+      ? `${imageHash}_${language}_${cropHint.toLowerCase()}`
+      : `${imageHash}_${language}`;
+
+    // 2. Cache Lookup (unless forceRefresh is true)
+    // If found, return immediately with fromCache: true WITHOUT calling Gemini and WITHOUT using daily scan
+    if (!forceRefresh) {
+      try {
+        const cachedResult = await getScanCache({ userId, cacheKey });
+        if (cachedResult) {
+          safeLogger.info(`Serving cached diagnosis for user ${userId}`, {
+            cacheKey,
+            cropHint: cropHint || 'none',
+          });
+          return res.status(200).json({
+            ...cachedResult,
+            fromCache: true,
+          });
+        }
+      } catch (cacheErr) {
+        safeLogger.warn('Cache lookup failed, proceeding with fresh scan', { error: cacheErr.message });
+      }
+    }
+
+    // 3. Check Global Daily Cap across all users (Emergency Brake)
     const globalCapResult = await checkAndIncrementGlobalDailyCap(todayDateStr);
     if (!globalCapResult.allowed) {
       safeLogger.warn(`Global daily cap reached: ${limits.globalDailyCap} scans on ${todayDateStr}`);
@@ -48,26 +79,34 @@ function createDiagnoseHandler(getApiKey) {
       });
     }
 
-    // 2. Check & Increment User Daily Limit (users/{uid} transaction in Asia/Kolkata)
-    const userLimitResult = await checkAndIncrementUserDailyLimit(userId, todayDateStr);
-    if (!userLimitResult.allowed) {
-      // Refund the global cap since this user's scan won't proceed
-      await refundScan({ userId: 'none', dateStr: todayDateStr });
+    // 4. Check & Increment User Daily Limit (Item 7d: crop change re-runs do not use extra daily scan)
+    const isCropChangeReRun = Boolean(cropHint && cropHint.length > 0);
+    let userQuotaConsumed = false;
 
-      safeLogger.warn(`Daily limit reached for user: ${userId} (${limits.userDailyLimit} scans on ${todayDateStr})`);
-      return res.status(429).json({
-        error: {
-          code: 'rate_limited',
-          message: isHindi
-            ? `दैनिक स्कैन सीमा समाप्त हो गई है (अधिकतम ${limits.userDailyLimit} स्कैन प्रतिदिन)। कृपया कल पुनः प्रयास करें।`
-            : `Daily scan limit reached (maximum ${limits.userDailyLimit} scans per day). Please try again tomorrow.`,
-          limit: userLimitResult.limit,
-          resetsAt: userLimitResult.resetsAt,
-        },
-      });
+    if (!isCropChangeReRun) {
+      const userLimitResult = await checkAndIncrementUserDailyLimit(userId, todayDateStr);
+      if (!userLimitResult.allowed) {
+        // Refund global cap since user scan won't proceed
+        await refundScan({ userId: 'none', dateStr: todayDateStr });
+
+        safeLogger.warn(`Daily limit reached for user: ${userId} (${limits.userDailyLimit} scans on ${todayDateStr})`);
+        return res.status(429).json({
+          error: {
+            code: 'rate_limited',
+            message: isHindi
+              ? `दैनिक स्कैन सीमा समाप्त हो गई है (अधिकतम ${limits.userDailyLimit} स्कैन प्रतिदिन)। कृपया कल पुनः प्रयास करें।`
+              : `Daily scan limit reached (maximum ${limits.userDailyLimit} scans per day). Please try again tomorrow.`,
+            limit: userLimitResult.limit,
+            resetsAt: userLimitResult.resetsAt,
+          },
+        });
+      }
+      userQuotaConsumed = true;
+    } else {
+      safeLogger.info(`Crop correction re-run with cropHint="${cropHint}" - not consuming daily scan quota for user ${userId}`);
     }
 
-    // 3. Execute AI Vision diagnosis with ~45s timeout
+    // 5. Execute AI Vision diagnosis with ~45s timeout & determinism
     let diagnosisResult;
     try {
       const apiKey = getApiKey();
@@ -79,12 +118,15 @@ function createDiagnoseHandler(getApiKey) {
         apiKey,
         imageBuffer,
         mimeType,
-        crop,
+        cropHint,
         language,
       });
     } catch (aiErr) {
-      // AI call failed or timed out: Refund user and global quota immediately!
-      await refundScan({ userId, dateStr: todayDateStr });
+      // AI call failed or timed out: Refund quota immediately!
+      await refundScan({
+        userId: userQuotaConsumed ? userId : 'none',
+        dateStr: todayDateStr,
+      });
 
       if (aiErr.code === 'timeout' || aiErr.status === 504) {
         safeLogger.warn('Diagnosis AI call timed out; refunded scan quota', { userId });
@@ -137,22 +179,23 @@ function createDiagnoseHandler(getApiKey) {
       });
     }
 
-    // 4. Persist result in Firestore 'scans' collection
+    // 6. Build response object matching client model format exactly
+    let responseData;
     try {
       const savedScan = await saveScanRecord({
         userId,
-        cropId: crop,
+        cropId: cropHint || diagnosisResult.detectedCrop || 'plant',
         language,
         diagnosis: diagnosisResult,
       });
 
       safeLogger.info(`Successfully completed scan ${savedScan.id} for user ${userId} (${savedScan.diseaseName})`);
 
-      // 5. Return diagnosis matching client model format exactly
-      return res.status(200).json({
+      responseData = {
         id: savedScan.id,
         cropId: savedScan.cropId,
         detectedCrop: savedScan.detectedCrop || diagnosisResult.detectedCrop || 'Unknown Plant',
+        cropConfidence: savedScan.cropConfidence || diagnosisResult.cropConfidence || 'likely',
         status: savedScan.status || diagnosisResult.status || 'diseased',
         diseaseName: savedScan.diseaseName,
         scientificName: savedScan.scientificName,
@@ -168,15 +211,17 @@ function createDiagnoseHandler(getApiKey) {
         preventionTips: savedScan.preventionTips,
         photoQuality: savedScan.photoQuality,
         possibleCauses: savedScan.possibleCauses,
+        spokenSummary: savedScan.spokenSummary || diagnosisResult.spokenSummary || '',
         language: savedScan.language,
-      });
+        fromCache: false,
+      };
     } catch (saveErr) {
       safeLogger.error('Failed to save scan record to Firestore', { message: saveErr.message });
-      // Even if Firestore save had an issue, return diagnosis result so user gets their answer
-      return res.status(200).json({
+      responseData = {
         id: `scan_${Date.now()}`,
-        cropId: crop || diagnosisResult.detectedCrop || 'general_crop',
+        cropId: cropHint || diagnosisResult.detectedCrop || 'plant',
         detectedCrop: diagnosisResult.detectedCrop || 'Unknown Plant',
+        cropConfidence: diagnosisResult.cropConfidence || 'likely',
         status: diagnosisResult.status || 'diseased',
         diseaseName: diagnosisResult.diseaseName,
         scientificName: diagnosisResult.scientificName || 'N/A',
@@ -192,9 +237,23 @@ function createDiagnoseHandler(getApiKey) {
         preventionTips: diagnosisResult.preventionTips || [],
         photoQuality: diagnosisResult.photoQuality || 'good',
         possibleCauses: diagnosisResult.possibleCauses || [],
-        language: language,
-      });
+        spokenSummary: diagnosisResult.spokenSummary || '',
+        language,
+        fromCache: false,
+      };
     }
+
+    // 7. Save to users/{uid}/scanCache/{cacheKey} with 7-day TTL (never storing image)
+    await saveScanCache({
+      userId,
+      cacheKey,
+      imageHash,
+      language,
+      cropHint,
+      result: responseData,
+    });
+
+    return res.status(200).json(responseData);
   };
 }
 

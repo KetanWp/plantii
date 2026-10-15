@@ -210,33 +210,37 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppTheme.primaryGreenLight,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              (record.detectedCrop != null && record.detectedCrop!.isNotEmpty)
-                                  ? record.detectedCrop!
-                                  : (record.diagnosis.detectedCrop.isNotEmpty
-                                      ? record.diagnosis.detectedCrop
-                                      : record.cropName),
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.primaryGreen,
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryGreenLight,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                (record.detectedCrop != null && record.detectedCrop!.isNotEmpty)
+                                    ? record.detectedCrop!
+                                    : (record.diagnosis.detectedCrop.isNotEmpty
+                                        ? record.diagnosis.detectedCrop
+                                        : record.cropName),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.primaryGreen,
+                                ),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
+                          const SizedBox(width: 6),
+                          Flexible(
                             child: Text(
                               formattedDate,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 13,
+                                fontSize: 12.5,
                                 color: AppTheme.mutedDark,
                               ),
                             ),
@@ -248,26 +252,30 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ),
                 const SizedBox(width: 10),
 
-                // Severity color badge & chevron
+                // Severity plain text chip & chevron (only shown for diseased scans)
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: severityColor.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: severityColor, width: 1.2),
-                      ),
-                      child: Text(
-                        severityText,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: severityColor,
+                    if (record.severity != DiagnosisSeverity.none &&
+                        !record.diagnosis.isHealthy &&
+                        !record.diagnosis.isPoorPhoto &&
+                        !record.diagnosis.isNotAPlant)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: severityColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: severityColor, width: 1.2),
+                        ),
+                        child: Text(
+                          severityText,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: severityColor,
+                          ),
                         ),
                       ),
-                    ),
                     const SizedBox(height: 8),
                     const Icon(
                       Icons.chevron_right,

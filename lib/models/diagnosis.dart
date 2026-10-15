@@ -76,7 +76,7 @@ enum DiagnosisConfidence {
   }
 }
 
-/// Disease severity level for traffic light display
+/// Disease severity level
 enum DiagnosisSeverity {
   mild,
   moderate,
@@ -103,6 +103,7 @@ class Diagnosis {
   final String id;
   final String cropId;
   final String detectedCrop;
+  final String cropConfidence; // 'very_likely' | 'likely' | 'possible'
   final DiagnosisStatus status;
   final String diseaseName;
   final String scientificName;
@@ -117,11 +118,14 @@ class Diagnosis {
   final List<String> preventionTips;
   final String photoQuality;
   final List<String> possibleCauses;
+  final String spokenSummary;
+  final bool fromCache;
 
   const Diagnosis({
     required this.id,
     required this.cropId,
     this.detectedCrop = '',
+    this.cropConfidence = 'very_likely',
     this.status = DiagnosisStatus.diseased,
     required this.diseaseName,
     required this.scientificName,
@@ -136,6 +140,8 @@ class Diagnosis {
     required this.preventionTips,
     this.photoQuality = 'good',
     this.possibleCauses = const [],
+    this.spokenSummary = '',
+    this.fromCache = false,
   });
 
   bool get isDiseased => status == DiagnosisStatus.diseased;
@@ -143,11 +149,58 @@ class Diagnosis {
   bool get isNotAPlant => status == DiagnosisStatus.notAPlant;
   bool get isPoorPhoto => status == DiagnosisStatus.poorPhoto;
 
+  Diagnosis copyWith({
+    String? id,
+    String? cropId,
+    String? detectedCrop,
+    String? cropConfidence,
+    DiagnosisStatus? status,
+    String? diseaseName,
+    String? scientificName,
+    DiagnosisSeverity? severity,
+    DiagnosisConfidence? confidence,
+    String? confidenceLevel,
+    String? description,
+    List<String>? immediateActions,
+    List<String>? organicTreatments,
+    List<String>? chemicalTreatments,
+    String? safetyNote,
+    List<String>? preventionTips,
+    String? photoQuality,
+    List<String>? possibleCauses,
+    String? spokenSummary,
+    bool? fromCache,
+  }) {
+    return Diagnosis(
+      id: id ?? this.id,
+      cropId: cropId ?? this.cropId,
+      detectedCrop: detectedCrop ?? this.detectedCrop,
+      cropConfidence: cropConfidence ?? this.cropConfidence,
+      status: status ?? this.status,
+      diseaseName: diseaseName ?? this.diseaseName,
+      scientificName: scientificName ?? this.scientificName,
+      severity: severity ?? this.severity,
+      confidence: confidence ?? this.confidence,
+      confidenceLevel: confidenceLevel ?? this.confidenceLevel,
+      description: description ?? this.description,
+      immediateActions: immediateActions ?? this.immediateActions,
+      organicTreatments: organicTreatments ?? this.organicTreatments,
+      chemicalTreatments: chemicalTreatments ?? this.chemicalTreatments,
+      safetyNote: safetyNote ?? this.safetyNote,
+      preventionTips: preventionTips ?? this.preventionTips,
+      photoQuality: photoQuality ?? this.photoQuality,
+      possibleCauses: possibleCauses ?? this.possibleCauses,
+      spokenSummary: spokenSummary ?? this.spokenSummary,
+      fromCache: fromCache ?? this.fromCache,
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'cropId': cropId,
       'detectedCrop': detectedCrop,
+      'cropConfidence': cropConfidence,
       'status': status.wireName,
       'diseaseName': diseaseName,
       'scientificName': scientificName,
@@ -162,6 +215,8 @@ class Diagnosis {
       'preventionTips': preventionTips,
       'photoQuality': photoQuality,
       'possibleCauses': possibleCauses,
+      'spokenSummary': spokenSummary,
+      'fromCache': fromCache,
     };
   }
 
@@ -188,6 +243,7 @@ class Diagnosis {
       id: map['id'] as String? ?? '',
       cropId: map['cropId'] as String? ?? '',
       detectedCrop: map['detectedCrop'] as String? ?? (map['cropId'] as String? ?? ''),
+      cropConfidence: map['cropConfidence'] as String? ?? 'very_likely',
       status: status,
       diseaseName: map['diseaseName'] as String? ?? '',
       scientificName: map['scientificName'] as String? ?? '',
@@ -202,6 +258,8 @@ class Diagnosis {
       preventionTips: preventionList,
       photoQuality: map['photoQuality'] as String? ?? 'good',
       possibleCauses: List<String>.from(map['possibleCauses'] as List? ?? []),
+      spokenSummary: map['spokenSummary'] as String? ?? '',
+      fromCache: map['fromCache'] as bool? ?? false,
     );
   }
 }

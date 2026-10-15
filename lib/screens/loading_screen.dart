@@ -51,9 +51,9 @@ class _LoadingScreenState extends State<LoadingScreen> {
 
     final Map<String, dynamic>? args =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    final String cropId = args?['cropId'] as String? ?? 'tomato';
+    final String? cropHint = args?['cropHint'] as String?;
+    final bool forceRefresh = args?['forceRefresh'] as bool? ?? false;
     final String? imagePath = args?['imagePath'] as String?;
-    final String? cropName = args?['cropName'] as String?;
     final String languageCode = Localizations.localeOf(context).languageCode;
 
     if (imagePath == null || !File(imagePath).existsSync()) {
@@ -71,15 +71,16 @@ class _LoadingScreenState extends State<LoadingScreen> {
     try {
       final Diagnosis diagnosis = await _diagnosisService.diagnose(
         imageFile: File(imagePath),
-        crop: cropId,
         language: languageCode,
+        cropHint: cropHint,
+        forceRefresh: forceRefresh,
       );
 
       final effectiveCrop = diagnosis.detectedCrop.isNotEmpty
           ? diagnosis.detectedCrop
-          : (cropName != null && cropName.isNotEmpty
-              ? cropName
-              : (cropId.isNotEmpty ? cropId : 'Plant'));
+          : (cropHint != null && cropHint.isNotEmpty
+              ? cropHint
+              : 'Plant');
 
       // Persist to local offline history so it remains accessible without internet
       final scanRecord = ScanRecord(
@@ -87,7 +88,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
             ? diagnosis.id
             : 'scan_${DateTime.now().millisecondsSinceEpoch}',
         photoPath: imagePath,
-        cropId: cropId.isNotEmpty ? cropId : 'plant',
+        cropId: cropHint ?? 'plant',
         cropName: effectiveCrop,
         detectedCrop: diagnosis.detectedCrop.isNotEmpty ? diagnosis.detectedCrop : effectiveCrop,
         diseaseName: diagnosis.diseaseName,
@@ -134,7 +135,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
     final Map<String, dynamic>? args =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final String? imagePath = args?['imagePath'] as String?;
-    final String? cropName = args?['cropName'] as String?;
+    final String? cropHint = args?['cropHint'] as String?;
 
     return Scaffold(
       backgroundColor: AppTheme.earthSand,
@@ -147,7 +148,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
             child: _isLoading
-                ? _buildLoadingState(l10n, imagePath, cropName)
+                ? _buildLoadingState(l10n, imagePath, cropHint)
                 : _buildErrorState(l10n, imagePath),
           ),
         ),
@@ -159,7 +160,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
   Widget _buildLoadingState(
     AppLocalizations l10n,
     String? imagePath,
-    String? cropName,
+    String? cropHint,
   ) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -237,7 +238,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
           ),
         ),
 
-        if (cropName != null) ...[
+        if (cropHint != null && cropHint.isNotEmpty) ...[
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -247,7 +248,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
               border: Border.all(color: AppTheme.borderSubtle, width: 1.5),
             ),
             child: Text(
-              l10n.selectedCrop(cropName),
+              cropHint,
               style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
@@ -415,26 +416,29 @@ class _LoadingScreenState extends State<LoadingScreen> {
 
           // Primary Action: Retry (if applicable)
           if (showRetryButton) ...[
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton.icon(
-                key: const ValueKey('retry_diagnosis_button'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryGreen,
-                  foregroundColor: Colors.white,
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 56),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  key: const ValueKey('retry_diagnosis_button'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryGreen,
+                    foregroundColor: Colors.white,
+                    elevation: 2,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
-                ),
-                onPressed: _executeDiagnosis,
-                icon: const Icon(Icons.refresh_rounded, size: 24),
-                label: Text(
-                  l10n.retry,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                  onPressed: _executeDiagnosis,
+                  icon: const Icon(Icons.refresh_rounded, size: 24),
+                  label: Text(
+                    l10n.retry,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -444,36 +448,39 @@ class _LoadingScreenState extends State<LoadingScreen> {
 
           // Secondary Action: Retake Photo (if applicable)
           if (showRetakeButton) ...[
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton.icon(
-                key: const ValueKey('retake_photo_button'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: showRetryButton
-                      ? Colors.grey.shade100
-                      : AppTheme.primaryGreen,
-                  foregroundColor: showRetryButton
-                      ? AppTheme.highContrastDark
-                      : Colors.white,
-                  elevation: 0,
-                  side: BorderSide(
-                    color: showRetryButton
-                        ? AppTheme.borderSubtle
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 56),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  key: const ValueKey('retake_photo_button'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: showRetryButton
+                        ? Colors.grey.shade100
                         : AppTheme.primaryGreen,
-                    width: 1.5,
+                    foregroundColor: showRetryButton
+                        ? AppTheme.highContrastDark
+                        : Colors.white,
+                    elevation: 0,
+                    side: BorderSide(
+                      color: showRetryButton
+                          ? AppTheme.borderSubtle
+                          : AppTheme.primaryGreen,
+                      width: 1.5,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.camera_alt_outlined, size: 24),
-                label: Text(
-                  l10n.retakePhoto,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.camera_alt_outlined, size: 24),
+                  label: Text(
+                    l10n.retakePhoto,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -483,30 +490,33 @@ class _LoadingScreenState extends State<LoadingScreen> {
 
           // Tertiary Action: Back to Home
           if (showHomeButton) ...[
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: TextButton.icon(
-                key: const ValueKey('home_return_button'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppTheme.mutedDark,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 52),
+              child: SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  key: const ValueKey('home_return_button'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppTheme.mutedDark,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
-                ),
-                onPressed: () {
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    AppRoutes.home,
-                    (route) => false,
-                  );
-                },
-                icon: const Icon(Icons.home_outlined, size: 22),
-                label: Text(
-                  l10n.backToHome,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                  onPressed: () {
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      AppRoutes.home,
+                      (route) => false,
+                    );
+                  },
+                  icon: const Icon(Icons.home_outlined, size: 22),
+                  label: Text(
+                    l10n.backToHome,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),

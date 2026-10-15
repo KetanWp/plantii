@@ -1,8 +1,8 @@
 /**
- * Firestore Service for Scans and Feedback
+ * Firestore Service for Scans, Feedback, and Image-Hash Cache
  *
- * Handles persistent storage of diagnosis results in 'scans'
- * and user feedback in 'feedback'.
+ * Handles persistent storage of diagnosis results in 'scans',
+ * user feedback in 'feedback', and image-hash cache in 'users/{uid}/scanCache'.
  */
 
 const admin = require('firebase-admin');
@@ -13,7 +13,7 @@ const { safeLogger } = require('../middleware/sanitizeLogs');
  *
  * @param {Object} params
  * @param {string} params.userId - Authenticated user UID
- * @param {string} params.cropId - Crop name / identifier
+ * @param {string} [params.cropId] - Crop name / identifier
  * @param {string} params.language - 'hi' or 'en'
  * @param {Object} params.diagnosis - Validated diagnosis data
  * @returns {Promise<Object>} Saved scan record with generated id
@@ -27,6 +27,7 @@ async function saveScanRecord({ userId, cropId, language, diagnosis }) {
     userId,
     cropId: cropId || diagnosis.detectedCrop || 'general_crop',
     detectedCrop: diagnosis.detectedCrop || cropId || 'Unknown Plant',
+    cropConfidence: diagnosis.cropConfidence || 'likely',
     status: diagnosis.status || 'diseased',
     diseaseName: diagnosis.diseaseName || '',
     scientificName: diagnosis.scientificName || 'N/A',
@@ -42,6 +43,7 @@ async function saveScanRecord({ userId, cropId, language, diagnosis }) {
     preventionTips: diagnosis.preventionTips || diagnosis.prevention || [],
     photoQuality: diagnosis.photoQuality || 'good',
     possibleCauses: diagnosis.possibleCauses || [],
+    spokenSummary: diagnosis.spokenSummary || '',
     language: language || 'en',
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
   };
@@ -50,6 +52,84 @@ async function saveScanRecord({ userId, cropId, language, diagnosis }) {
   safeLogger.info(`Successfully stored scan record: ${docRef.id} for user: ${userId}`);
 
   return scanRecord;
+}
+
+/**
+ * Saves diagnosis result into user's scan cache with 7-day TTL
+ * Never stores the image itself, only hash and result.
+ *
+ * @param {Object} params
+ * @param {string} params.userId
+ * @param {string} params.cacheKey
+ * @param {string} params.imageHash
+ * @param {string} params.language
+ * @param {string} [params.cropHint]
+ * @param {Object} params.result - Clean diagnosis result object
+ */
+async function saveScanCache({ userId, cacheKey, imageHash, language, cropHint = '', result }) {
+  try {
+    const expireAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days TTL
+    const cacheRef = admin
+      .firestore()
+      .collection('users')
+      .doc(userId)
+      .collection('scanCache')
+      .doc(cacheKey);
+
+    await cacheRef.set({
+      key: cacheKey,
+      imageHash,
+      language,
+      cropHint: cropHint || '',
+      result,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      expireAt,
+    });
+    safeLogger.info(`Saved scan cache entry ${cacheKey} for user ${userId} (TTL: 7 days)`);
+  } catch (err) {
+    safeLogger.warn('Failed to save scan cache entry', { userId, cacheKey, error: err.message });
+  }
+}
+
+/**
+ * Looks up a cached diagnosis result for a user
+ *
+ * @param {Object} params
+ * @param {string} params.userId
+ * @param {string} params.cacheKey
+ * @returns {Promise<Object|null>} Cached diagnosis result or null if missing/expired
+ */
+async function getScanCache({ userId, cacheKey }) {
+  try {
+    const cacheDoc = await admin
+      .firestore()
+      .collection('users')
+      .doc(userId)
+      .collection('scanCache')
+      .doc(cacheKey)
+      .get();
+
+    if (!cacheDoc.exists) return null;
+
+    const data = cacheDoc.data();
+    if (!data) return null;
+
+    // Check expiration
+    const now = new Date();
+    let expireAtDate;
+    if (data.expireAt) {
+      expireAtDate = data.expireAt.toDate ? data.expireAt.toDate() : new Date(data.expireAt);
+    }
+    if (expireAtDate && expireAtDate < now) {
+      // Cache entry expired
+      return null;
+    }
+
+    return data.result || null;
+  } catch (err) {
+    safeLogger.warn('Error checking scan cache', { userId, cacheKey, error: err.message });
+    return null;
+  }
 }
 
 /**
@@ -118,6 +198,7 @@ async function recordUserConsent({ userId, consentVersion = '1.0' }) {
  * Deletes all Firestore data associated with a user:
  * - scans collection where userId == userId
  * - feedback collection where userId == userId
+ * - users/{userId}/scanCache collection
  * - users/{userId} document
  *
  * @param {string} userId
@@ -150,7 +231,22 @@ async function deleteUserData(userId) {
     await batch.commit();
   }
 
-  // 3. Delete user document in users/{userId}
+  // 3. Delete scanCache subcollection
+  try {
+    const userRef = db.collection('users').doc(userId);
+    if (typeof userRef.collection === 'function') {
+      const cacheSnapshot = await userRef.collection('scanCache').get();
+      if (cacheSnapshot && !cacheSnapshot.empty) {
+        const batch = db.batch();
+        cacheSnapshot.forEach((doc) => batch.delete(doc.ref));
+        await batch.commit();
+      }
+    }
+  } catch (err) {
+    safeLogger.warn('Error clearing user scanCache during deletion', { userId, error: err.message });
+  }
+
+  // 4. Delete user document in users/{userId}
   const userDocRef = db.collection('users').doc(userId);
   const userDoc = await userDocRef.get();
   const userDocDeleted = userDoc.exists;
@@ -171,6 +267,8 @@ async function deleteUserData(userId) {
 
 module.exports = {
   saveScanRecord,
+  saveScanCache,
+  getScanCache,
   getScanById,
   saveFeedbackRecord,
   recordUserConsent,

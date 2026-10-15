@@ -46,22 +46,6 @@ module.exports = {
   enforceAppCheck: process.env.ENFORCE_APP_CHECK === 'true',
 
   // 7. Input Validation Lists
-  allowedCrops: [
-    'tomato',
-    'potato',
-    'rice',
-    'wheat',
-    'cotton',
-    'chilli',
-    'maize',
-    'corn',
-    'soybean',
-    'sugarcane',
-    'onion',
-    'general_crop',
-    'plant',
-    'crop',
-  ],
   allowedLanguages: ['en', 'hi'],
 
   // 8. Data Retention & Cleanup Policies

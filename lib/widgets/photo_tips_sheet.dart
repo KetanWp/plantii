@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../services/image_processing_service.dart';
@@ -68,8 +69,9 @@ class _PhotoTipsSheetState extends State<PhotoTipsSheet> {
     } on PlatformException catch (e) {
       debugPrint('PhotoTipsSheet: PlatformException: $e');
       if (!mounted) return;
-      final message = (e.code.toLowerCase().contains('permission') ||
-              e.message?.toLowerCase().contains('permission') == true)
+      final isPermissionError = e.code.toLowerCase().contains('permission') ||
+          e.message?.toLowerCase().contains('permission') == true;
+      final message = isPermissionError
           ? (isHindi
               ? 'कैमरा या गैलरी की अनुमति अस्वीकार है। कृपया सेटिंग्स में अनुमति दें।'
               : 'Permission denied. Please grant camera/storage access in settings.')
@@ -83,6 +85,15 @@ class _PhotoTipsSheetState extends State<PhotoTipsSheet> {
           backgroundColor: AppTheme.severityHigh,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          action: isPermissionError
+              ? SnackBarAction(
+                  label: isHindi ? 'सेटिंग्स' : 'Settings',
+                  textColor: Colors.yellowAccent,
+                  onPressed: () {
+                    Geolocator.openAppSettings();
+                  },
+                )
+              : null,
         ),
       );
     } on PhotoValidationException catch (e) {

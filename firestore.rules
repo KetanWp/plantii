@@ -11,6 +11,19 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // User document & Image-Hash Scan Cache:
+    // - Authenticated users can read their own scan cache and user document
+    // - Zero client writes allowed (cache and user data are managed solely via Cloud Functions Admin SDK)
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+
+      match /scanCache/{cacheKey} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false;
+      }
+    }
+
     // Feedback collection:
     // - Client direct access blocked (Cloud Functions Admin SDK handles verified submission)
     match /feedback/{feedbackId} {

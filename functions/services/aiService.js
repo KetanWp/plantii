@@ -6,6 +6,9 @@
  * Enforces status ("diseased", "healthy", "not_a_plant", "poor_photo").
  * Refines schema so treatments, diseaseName, causes are only required when status is "diseased".
  * Confidence enum: "very_likely", "likely", "possible".
+ * CropConfidence enum: "very_likely", "likely", "possible".
+ * SpokenSummary: 3-5 short natural sentences tailored for listening aloud.
+ * Determinism: temperature 0, topK 1, fixed seed 42.
  * No silent .catch() defaults; invalid values trigger single retry, then ai_failed.
  * Supports primary & fallback models list from limits.js.
  * NEVER returns mock, invented, or default disease results.
@@ -23,10 +26,12 @@ const { safeLogger } = require('../middleware/sanitizeLogs');
  * Base schema matching the Diagnosis model:
  * status: "diseased" | "healthy" | "not_a_plant" | "poor_photo"
  * confidence: "very_likely" | "likely" | "possible"
+ * cropConfidence: "very_likely" | "likely" | "possible"
  */
 const BaseDiagnosisSchema = z.object({
   status: z.enum(['diseased', 'healthy', 'not_a_plant', 'poor_photo']),
   detectedCrop: z.string().default('Unknown Plant'),
+  cropConfidence: z.enum(['very_likely', 'likely', 'possible']).default('likely'),
   diseaseName: z.string().default(''),
   scientificName: z.string().default(''),
   severity: z.enum(['mild', 'moderate', 'severe']).optional().or(z.literal('')).or(z.literal('none')),
@@ -39,6 +44,7 @@ const BaseDiagnosisSchema = z.object({
   prevention: z.array(z.string()).default([]),
   photoQuality: z.enum(['good', 'poor', 'unclear']).default('good'),
   possibleCauses: z.array(z.string()).default([]),
+  spokenSummary: z.string().default(''),
 });
 
 /**
@@ -120,7 +126,12 @@ const geminiResponseSchema = {
     },
     detectedCrop: {
       type: Type.STRING,
-      description: 'The crop or plant species identified from the leaf image (e.g. Tomato, Rice, Wheat), or "Unknown Plant" if botanical species is ambiguous, or "None" if not a plant.',
+      description: 'The crop or plant species identified from the leaf image, or "Unknown Plant" if ambiguous, or "None" if not a plant.',
+    },
+    cropConfidence: {
+      type: Type.STRING,
+      enum: ['very_likely', 'likely', 'possible'],
+      description: 'Confidence in identifying the crop species.',
     },
     diseaseName: { type: Type.STRING },
     scientificName: { type: Type.STRING },
@@ -143,6 +154,10 @@ const geminiResponseSchema = {
       enum: ['good', 'poor', 'unclear'],
     },
     possibleCauses: { type: Type.ARRAY, items: { type: Type.STRING } },
+    spokenSummary: {
+      type: Type.STRING,
+      description: '3-5 short, natural sentences written for listening aloud in the requested language (spoken Hindi if Hindi). Covers what problem is, how serious, first thing to do, safety reminder if chemicals mentioned.',
+    },
   },
   required: [
     'status',
@@ -160,14 +175,12 @@ function cleanJsonString(raw) {
   if (!raw || typeof raw !== 'string') return '';
   let cleaned = raw.trim();
 
-  // Strip leading code fence
   if (cleaned.startsWith('```json')) {
     cleaned = cleaned.substring(7);
   } else if (cleaned.startsWith('```')) {
     cleaned = cleaned.substring(3);
   }
 
-  // Strip trailing code fence
   if (cleaned.endsWith('```')) {
     cleaned = cleaned.substring(0, cleaned.length - 3);
   }
@@ -210,6 +223,20 @@ function parseAndValidateDiagnosis(rawText) {
     }
   }
 
+  // Normalize cropConfidence to enum
+  if (parsed.cropConfidence) {
+    const rawCropConf = String(parsed.cropConfidence).toLowerCase().trim();
+    if (rawCropConf.includes('very') || rawCropConf === 'high') {
+      parsed.cropConfidence = 'very_likely';
+    } else if (rawCropConf.includes('poss') || rawCropConf === 'low') {
+      parsed.cropConfidence = 'possible';
+    } else {
+      parsed.cropConfidence = 'likely';
+    }
+  } else {
+    parsed.cropConfidence = 'likely';
+  }
+
   // Normalize severity if empty or "none"
   if (parsed.severity === 'none' || parsed.severity === undefined) {
     parsed.severity = '';
@@ -225,6 +252,23 @@ function parseAndValidateDiagnosis(rawText) {
   parsed.diseaseName = parsed.diseaseName || '';
   parsed.scientificName = parsed.scientificName || '';
   parsed.safetyNote = parsed.safetyNote || '';
+  parsed.spokenSummary = parsed.spokenSummary || '';
+
+  // If spokenSummary is empty, construct a fallback natural spoken sentence
+  if (!parsed.spokenSummary || parsed.spokenSummary.trim().length === 0) {
+    if (parsed.status === 'healthy') {
+      parsed.spokenSummary = parsed.description;
+    } else if (parsed.status === 'diseased') {
+      const parts = [];
+      if (parsed.diseaseName) parts.push(`पौधे में ${parsed.diseaseName} के लक्षण पाए गए हैं।`);
+      if (parsed.immediateActions.length > 0) parts.push(`तुरंत यह कदम उठाएं: ${parsed.immediateActions[0]}।`);
+      if (parsed.organicTreatments.length > 0) parts.push(`जैविक उपचार: ${parsed.organicTreatments[0]}।`);
+      if (parsed.safetyNote) parts.push(`सावधानी: ${parsed.safetyNote}`);
+      parsed.spokenSummary = parts.join(' ');
+    } else {
+      parsed.spokenSummary = parsed.description;
+    }
+  }
 
   const validated = DiagnosisSchema.safeParse(parsed);
   if (!validated.success) {
@@ -364,17 +408,17 @@ function classifyGeminiError(error) {
 }
 
 /**
- * Analyzes crop leaf image using Gemini Vision API with model fallback and 1 retry on invalid format
+ * Analyzes crop leaf image using Gemini Vision API with determinism, model fallback and 1 retry on invalid format
  *
  * @param {Object} options
  * @param {string} options.apiKey - Gemini AI API Key from Firebase Secret
  * @param {Buffer} options.imageBuffer - Raw JPEG/PNG image buffer
  * @param {string} options.mimeType - 'image/jpeg' or 'image/png'
- * @param {string} [options.crop] - Crop name
+ * @param {string} [options.cropHint] - Optional farmer confirmed crop name
  * @param {string} [options.language] - 'hi' or 'en'
  * @returns {Promise<Object>} Validated diagnosis object
  */
-async function analyzeCropLeaf({ apiKey, imageBuffer, mimeType, crop = 'plant', language = 'en' }) {
+async function analyzeCropLeaf({ apiKey, imageBuffer, mimeType, cropHint = '', language = 'en' }) {
   if (!apiKey) {
     const keyErr = new Error('AI API Key is missing. Please configure GEMINI_API_KEY via Firebase secrets.');
     keyErr.code = 'ai_auth_error';
@@ -393,7 +437,7 @@ async function analyzeCropLeaf({ apiKey, imageBuffer, mimeType, crop = 'plant', 
   let modelIndex = 0;
   let activeModel = models[modelIndex];
 
-  const basePrompt = getDiagnosisPrompt({ crop, language });
+  const basePrompt = getDiagnosisPrompt({ cropHint, language });
   const contents = [
     { text: basePrompt },
     {
@@ -404,8 +448,11 @@ async function analyzeCropLeaf({ apiKey, imageBuffer, mimeType, crop = 'plant', 
     },
   ];
 
+  // Determinism settings: temperature 0, topK 1, fixed seed 42
   const config = {
-    temperature: 0.2,
+    temperature: 0,
+    topK: 1,
+    seed: 42,
     responseMimeType: 'application/json',
     responseSchema: geminiResponseSchema,
   };
@@ -421,9 +468,11 @@ async function analyzeCropLeaf({ apiKey, imageBuffer, mimeType, crop = 'plant', 
   // Attempt 1: Call with primary model (or fallback if primary is overloaded)
   try {
     safeLogger.info('Initiating Gemini vision analysis', {
-      crop,
+      cropHint: cropHint || 'none',
       language,
       model: activeModel,
+      temperature: config.temperature,
+      topK: config.topK,
     });
 
     let response;
@@ -438,7 +487,6 @@ async function analyzeCropLeaf({ apiKey, imageBuffer, mimeType, crop = 'plant', 
         `Gemini Vision call timed out after ${overallTimeoutMs}ms`
       );
     } catch (primaryErr) {
-      // If primary model experienced 503/overload and a fallback is configured, switch to fallback model
       if (isOverloadError(primaryErr) && modelIndex + 1 < models.length) {
         modelIndex++;
         activeModel = models[modelIndex];
@@ -484,7 +532,6 @@ async function analyzeCropLeaf({ apiKey, imageBuffer, mimeType, crop = 'plant', 
       errorMessage: firstError.message,
     });
 
-    // Check if sufficient time remains for retry
     const remainingForRetry = getRemainingTimeout();
     if (remainingForRetry < 3000) {
       safeLogger.warn(`Insufficient time remaining for retry (${remainingForRetry}ms)`);
@@ -494,15 +541,16 @@ async function analyzeCropLeaf({ apiKey, imageBuffer, mimeType, crop = 'plant', 
       throw timeoutErr;
     }
 
-    // Attempt 2: Retry once with corrective strict instruction on active model
+    // Attempt 2: Retry with SAME prompt and model except for format reminder
     try {
       const correctivePrompt = `${basePrompt}
 
-CRITICAL RETRY INSTRUCTION:
-Your previous response failed validation.
-You MUST output valid, raw JSON only matching the schema exactly.
+CRITICAL FORMAT REMINDER:
+Output RAW valid JSON matching the schema strictly.
 status must be strictly one of: "diseased", "healthy", "not_a_plant", "poor_photo".
 confidence must be strictly one of: "very_likely", "likely", "possible".
+cropConfidence must be strictly one of: "very_likely", "likely", "possible".
+Include spokenSummary (3-5 short conversational sentences for listening aloud).
 If status is NOT "diseased", diseaseName, scientificName, treatments, actions, causes, and prevention MUST be empty.
 If status is "diseased", diseaseName and all treatment/action/prevention/causes arrays MUST have at least 1 valid item.
 No markdown fences, no extra text.`;

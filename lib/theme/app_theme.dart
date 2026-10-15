@@ -195,7 +195,7 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: leafGreenAccent,
           foregroundColor: textDark,
-          minimumSize: const Size.fromHeight(minTouchTargetSize),
+          minimumSize: const Size(64, minTouchTargetSize),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           shape: const StadiumBorder(),
           elevation: 0,
@@ -212,7 +212,7 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: forestGreen,
-          minimumSize: const Size.fromHeight(minTouchTargetSize),
+          minimumSize: const Size(64, minTouchTargetSize),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           side: const BorderSide(color: forestGreen, width: 2),
           shape: const StadiumBorder(),
@@ -255,5 +255,26 @@ class AppTheme {
         elevation: 8,
       ),
     );
+  }
+
+  /// Responsive body font size (scales slightly with width, bounded within 15.0 - 18.0)
+  static double responsiveBody(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    final scaled = 16.0 + (width - 375.0) * 0.01;
+    return scaled.clamp(15.0, 18.0);
+  }
+
+  /// Responsive title font size (scales slightly with width, bounded within 20.0 - 26.0)
+  static double responsiveTitle(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    final scaled = 22.0 + (width - 375.0) * 0.02;
+    return scaled.clamp(20.0, 26.0);
+  }
+
+  /// Responsive button font size (scales slightly with width, bounded within 16.0 - 18.0)
+  static double responsiveButton(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    final scaled = 17.0 + (width - 375.0) * 0.01;
+    return scaled.clamp(16.0, 18.0);
   }
 }

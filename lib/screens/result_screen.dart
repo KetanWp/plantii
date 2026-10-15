@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
 import '../models/diagnosis.dart';
+import '../routes.dart';
 import '../services/mock_diagnosis_service.dart';
 import '../services/real_diagnosis_service.dart';
 import '../services/tts_service.dart';
@@ -30,6 +31,8 @@ class _ResultScreenState extends State<ResultScreen> {
   late final TtsService _ttsService;
   late final RealDiagnosisService _diagnosisService;
 
+  bool _autoPlayChecked = false;
+
   @override
   void initState() {
     super.initState();
@@ -44,13 +47,23 @@ class _ResultScreenState extends State<ResultScreen> {
     }
   }
 
+  void _checkAutoPlay(Diagnosis diagnosis, String languageCode, AppLocalizations l10n) {
+    if (_autoPlayChecked) return;
+    _autoPlayChecked = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final autoPlay = await TtsService.isAutoPlayEnabled();
+      if (autoPlay && mounted && !_ttsService.isSpeaking) {
+        _toggleAudioReadout(diagnosis, languageCode, l10n);
+      }
+    });
+  }
+
   @override
   void dispose() {
     _ttsService.isSpeakingNotifier.removeListener(_onTtsSpeakingChanged);
+    _ttsService.stop();
     if (widget.ttsService == null) {
       _ttsService.dispose();
-    } else {
-      _ttsService.stop();
     }
     super.dispose();
   }
@@ -108,13 +121,15 @@ class _ResultScreenState extends State<ResultScreen> {
             : const MockDiagnosisService()
                 .getDiagnosisSyncFallback('tomato', false));
 
+    _checkAutoPlay(diagnosis, languageCode, l10n);
+
     return Scaffold(
       backgroundColor: AppTheme.earthSand,
       appBar: AppBar(
         title: Text(l10n.resultTitle),
         elevation: 0,
         actions: [
-          // Audio read-aloud button for low-literacy farmers
+          // Audio read-aloud button for low-literacy farmers (reads spokenSummary first)
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: TextButton.icon(
@@ -157,7 +172,11 @@ class _ResultScreenState extends State<ResultScreen> {
                   children: [
                     // User's captured photo
                     _buildPhotoCard(imagePath),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
+
+                    // Cache status & Re-check button
+                    _buildCacheNotice(imagePath, diagnosis, languageCode == 'hi'),
+                    const SizedBox(height: 14),
 
                     // Render content according to Diagnosis status
                     if (diagnosis.status == DiagnosisStatus.healthy)
@@ -166,13 +185,13 @@ class _ResultScreenState extends State<ResultScreen> {
                         diagnosis.status == DiagnosisStatus.notAPlant)
                       ..._buildRetakeContent(context, diagnosis, languageCode, l10n)
                     else
-                      ..._buildDiseasedContent(context, diagnosis, languageCode, l10n),
+                      ..._buildDiseasedContent(context, diagnosis, languageCode, l10n, imagePath),
                   ],
                 ),
               ),
             ),
-            if (_ttsService.isSpeaking)
-              _buildAudioPlayingBar(diagnosis, l10n),
+            if (_ttsService.isSpeaking || _ttsService.isPaused)
+              _buildAudioPlayingBar(diagnosis, l10n, languageCode),
           ],
         ),
       ),
@@ -419,10 +438,11 @@ class _ResultScreenState extends State<ResultScreen> {
     Diagnosis diagnosis,
     String languageCode,
     AppLocalizations l10n,
+    String? imagePath,
   ) {
     return [
       // Disease name, Detected Crop badge & Scientific name
-      _buildDiseaseHeader(diagnosis, languageCode),
+      _buildDiseaseHeader(diagnosis, languageCode, imagePath),
       const SizedBox(height: 14),
 
       // Traffic-light severity & Confidence in words
@@ -553,8 +573,179 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
-  /// Disease Title, Detected Crop badge, and Scientific name header
-  Widget _buildDiseaseHeader(Diagnosis diagnosis, String languageCode) {
+  /// Cache notice and Re-check button
+  Widget _buildCacheNotice(String? imagePath, Diagnosis diagnosis, bool isHindi) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: diagnosis.fromCache ? const Color(0xFFE8F5E9) : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: diagnosis.fromCache ? AppTheme.forestGreen.withValues(alpha: 0.3) : AppTheme.borderSubtle,
+          width: 1.2,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            diagnosis.fromCache ? Icons.bolt_rounded : Icons.check_circle_outline_rounded,
+            size: 20,
+            color: diagnosis.fromCache ? AppTheme.forestGreen : AppTheme.mutedDark,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              diagnosis.fromCache
+                  ? (isHindi ? 'कैश से प्राप्त (त्वरित परिणाम)' : 'Cached result (instant)')
+                  : (isHindi ? 'ताज़ा जांच परिणाम' : 'Fresh diagnosis'),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: diagnosis.fromCache ? AppTheme.forestGreen : AppTheme.mutedDark,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          TextButton.icon(
+            key: const ValueKey('recheck_button'),
+            style: TextButton.styleFrom(
+              foregroundColor: AppTheme.forestGreen,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            ),
+            icon: const Icon(Icons.refresh_rounded, size: 18),
+            label: Text(
+              isHindi ? 'पुनः जांचें' : 'Re-check',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+            onPressed: () => _recheckDiagnosis(imagePath, isHindi),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _recheckDiagnosis(String? imagePath, bool isHindi) {
+    if (imagePath == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isHindi ? 'छवि उपलब्ध नहीं है।' : 'Image not available for re-check.'),
+        ),
+      );
+      return;
+    }
+    _ttsService.stop();
+    Navigator.pushReplacementNamed(
+      context,
+      AppRoutes.loading,
+      arguments: {
+        'imagePath': imagePath,
+        'forceRefresh': true,
+      },
+    );
+  }
+
+  void _showWrongCropSheet(BuildContext context, String? imagePath, bool isHindi) {
+    if (imagePath == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isHindi ? 'छवि उपलब्ध नहीं है।' : 'Image not available for crop change.'),
+        ),
+      );
+      return;
+    }
+
+    final crops = [
+      {'en': 'Tomato', 'hi': 'टमाटर'},
+      {'en': 'Potato', 'hi': 'आलू'},
+      {'en': 'Rice (Paddy)', 'hi': 'धान (चावल)'},
+      {'en': 'Wheat', 'hi': 'गेहूं'},
+      {'en': 'Cotton', 'hi': 'कपास'},
+      {'en': 'Maize (Corn)', 'hi': 'मक्का'},
+      {'en': 'Soybean', 'hi': 'सोयाबीन'},
+      {'en': 'Mustard', 'hi': 'सरसों'},
+      {'en': 'Sugarcane', 'hi': 'गन्ना'},
+      {'en': 'Chilli', 'hi': 'मिर्च'},
+      {'en': 'Onion', 'hi': 'प्याज'},
+      {'en': 'Mango', 'hi': 'आम'},
+      {'en': 'Other', 'hi': 'अन्य'},
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.creamBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    isHindi ? 'सही फसल चुनें' : 'Choose Correct Crop',
+                    style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              Text(
+                isHindi
+                    ? 'सही फसल चुनकर पुनः जांचें (नया स्कैन खर्च नहीं होगा)'
+                    : 'Select crop to re-diagnose (uses no extra scan)',
+                style: const TextStyle(fontSize: 13.5, color: AppTheme.mutedDark),
+              ),
+              const SizedBox(height: 12),
+              ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: crops.length,
+                  separatorBuilder: (_, index) => const Divider(height: 1),
+                  itemBuilder: (c, i) {
+                    final crop = crops[i];
+                    final name = isHindi ? crop['hi']! : crop['en']!;
+                    return ListTile(
+                      title: Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _rerunWithCropHint(imagePath, crop['en']!);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _rerunWithCropHint(String imagePath, String cropHint) {
+    _ttsService.stop();
+    Navigator.pushReplacementNamed(
+      context,
+      AppRoutes.loading,
+      arguments: {
+        'imagePath': imagePath,
+        'cropHint': cropHint,
+      },
+    );
+  }
+
+  /// Disease Title, Detected Crop badge, Wrong crop button, and Scientific name header
+  Widget _buildDiseaseHeader(Diagnosis diagnosis, String languageCode, String? imagePath) {
     final isHindi = languageCode == 'hi';
     final String cropDisplay = diagnosis.detectedCrop.isNotEmpty
         ? diagnosis.detectedCrop
@@ -562,36 +753,89 @@ class _ResultScreenState extends State<ResultScreen> {
             ? diagnosis.cropId
             : (isHindi ? 'अज्ञात पौधा' : 'Unknown Plant'));
 
+    final bool isLowConfidenceCrop = diagnosis.cropConfidence.toLowerCase() == 'possible';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Detected Crop Badge
-        Container(
-          key: const ValueKey('detected_crop_badge'),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppTheme.leafGreenSubtle,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppTheme.forestGreen.withValues(alpha: 0.25)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.eco_rounded, size: 18, color: AppTheme.forestGreen),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  '${isHindi ? "पहचाना गया पौधा" : "Detected Crop"}: $cropDisplay',
-                  style: const TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.forestGreen,
+        // Detected Crop Badge & "Wrong crop? Change it" button
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Container(
+              key: const ValueKey('detected_crop_badge'),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: AppTheme.leafGreenSubtle,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.forestGreen.withValues(alpha: 0.25)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.eco_rounded, size: 18, color: AppTheme.forestGreen),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      '${isHindi ? "पहचाना गया पौधा" : "Detected Crop"}: $cropDisplay',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.forestGreen,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            OutlinedButton(
+              key: const ValueKey('wrong_crop_button'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: Size.zero,
+                foregroundColor: AppTheme.forestGreen,
+                side: const BorderSide(color: AppTheme.forestGreen),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              ),
+              onPressed: () => _showWrongCropSheet(context, imagePath, isHindi),
+              child: Text(
+                isHindi ? 'गलत पौधा? बदलें' : 'Wrong crop? Change it',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+
+        if (isLowConfidenceCrop) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF3E0),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.orange.shade300),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.help_outline_rounded, size: 16, color: Colors.orange.shade800),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    isHindi
+                        ? 'फसल की पहचान में अनिश्चितता है। कृपया सही फसल चुनें।'
+                        : "I'm not sure which crop this is. Please confirm or change it.",
+                    style: TextStyle(fontSize: 12.5, color: Colors.orange.shade900, fontWeight: FontWeight.w500),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
+
         const SizedBox(height: 10),
         Text(
           diagnosis.diseaseName,
@@ -613,16 +857,79 @@ class _ResultScreenState extends State<ResultScreen> {
             ),
           ),
         ],
+
+        // Spoken Summary Card (Requirement 5)
+        if (diagnosis.spokenSummary.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppTheme.forestGreen.withValues(alpha: 0.2), width: 1.5),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                InkWell(
+                  onTap: () => _toggleAudioReadout(diagnosis, languageCode, AppLocalizations.of(context)!),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: AppTheme.leafGreenSubtle,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      _ttsService.isSpeaking ? Icons.volume_up_rounded : Icons.play_arrow_rounded,
+                      color: AppTheme.forestGreen,
+                      size: 24,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isHindi ? 'ऑडियो सारांश' : 'Voice Summary',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.forestGreen,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        diagnosis.spokenSummary,
+                        style: const TextStyle(
+                          fontSize: 14.5,
+                          height: 1.4,
+                          color: AppTheme.textDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
 
-  /// Traffic-light severity bar and confidence in words
+  /// Plain severity chip and confidence in words (NO traffic light dots)
   Widget _buildSeverityAndConfidence(
     BuildContext context,
     Diagnosis diagnosis,
     AppLocalizations l10n,
   ) {
+    if (diagnosis.severity == DiagnosisSeverity.none) {
+      return const SizedBox.shrink();
+    }
+
     final (Color activeColor, String severityLabel) = switch (diagnosis.severity) {
       DiagnosisSeverity.mild => (AppTheme.severityLow, l10n.severityMild),
       DiagnosisSeverity.moderate => (AppTheme.severityMedium, l10n.severityModerate),
@@ -639,88 +946,40 @@ class _ResultScreenState extends State<ResultScreen> {
       ),
       child: Row(
         children: [
-          // Visual traffic-light indicator (3 dots)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFF212121),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildTrafficDot(
-                  AppTheme.severityLow,
-                  isActive: diagnosis.severity == DiagnosisSeverity.mild,
-                ),
-                const SizedBox(width: 6),
-                _buildTrafficDot(
-                  AppTheme.severityMedium,
-                  isActive: diagnosis.severity == DiagnosisSeverity.moderate,
-                ),
-                const SizedBox(width: 6),
-                _buildTrafficDot(
-                  AppTheme.severityHigh,
-                  isActive: diagnosis.severity == DiagnosisSeverity.severe,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-
-          // Severity text badge
+          // Plain text severity label in simple chip (no traffic dots)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: activeColor.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: activeColor, width: 1.5),
+              color: activeColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: activeColor.withValues(alpha: 0.4), width: 1.2),
             ),
             child: Text(
               severityLabel,
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 color: activeColor,
               ),
             ),
           ),
-          const Spacer(),
+          const SizedBox(width: 8),
 
           // Confidence level in words
-          Flexible(
+          Expanded(
             child: Text(
               diagnosis.confidenceLevel,
               textAlign: TextAlign.end,
               overflow: TextOverflow.ellipsis,
+              maxLines: 1,
               style: const TextStyle(
-                fontSize: 15,
+                fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: AppTheme.mutedDark,
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildTrafficDot(Color color, {required bool isActive}) {
-    return Container(
-      width: 14,
-      height: 14,
-      decoration: BoxDecoration(
-        color: isActive ? color : color.withValues(alpha: 0.25),
-        shape: BoxShape.circle,
-        boxShadow: isActive
-            ? [
-                BoxShadow(
-                  color: color.withValues(alpha: 0.7),
-                  blurRadius: 6,
-                  spreadRadius: 1,
-                )
-              ]
-            : null,
       ),
     );
   }
@@ -747,12 +1006,14 @@ class _ResultScreenState extends State<ResultScreen> {
               children: [
                 Icon(icon, color: iconColor, size: 24),
                 const SizedBox(width: 10),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.highContrastDark,
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.highContrastDark,
+                    ),
                   ),
                 ),
               ],
@@ -783,12 +1044,14 @@ class _ResultScreenState extends State<ResultScreen> {
               children: [
                 const Icon(Icons.eco, color: AppTheme.primaryGreen, size: 24),
                 const SizedBox(width: 8),
-                Text(
-                  l10n.organicTreatment,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryGreen,
+                Expanded(
+                  child: Text(
+                    l10n.organicTreatment,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryGreen,
+                    ),
                   ),
                 ),
               ],
@@ -803,12 +1066,14 @@ class _ResultScreenState extends State<ResultScreen> {
               children: [
                 const Icon(Icons.science, color: AppTheme.earthBrown, size: 24),
                 const SizedBox(width: 8),
-                Text(
-                  l10n.chemicalTreatment,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.earthBrown,
+                Expanded(
+                  child: Text(
+                    l10n.chemicalTreatment,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.earthBrown,
+                    ),
                   ),
                 ),
               ],
@@ -841,12 +1106,14 @@ class _ResultScreenState extends State<ResultScreen> {
                 size: 26,
               ),
               const SizedBox(width: 8),
-              Text(
-                l10n.safetyNote,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFE65100),
+              Expanded(
+                child: Text(
+                  l10n.safetyNote,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFE65100),
+                  ),
                 ),
               ),
             ],
@@ -955,98 +1222,112 @@ class _ResultScreenState extends State<ResultScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Thumbs up button (large touch target >= 56px)
-              InkWell(
-                key: const ValueKey('thumbs_up_button'),
-                onTap: _isSubmittingFeedback
-                    ? null
-                    : () => _submitFeedback(diagnosis, true, languageCode, l10n),
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: _isHelpful == true
-                        ? AppTheme.primaryGreenLight
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
+              Expanded(
+                child: InkWell(
+                  key: const ValueKey('thumbs_up_button'),
+                  onTap: _isSubmittingFeedback
+                      ? null
+                      : () => _submitFeedback(diagnosis, true, languageCode, l10n),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
                       color: _isHelpful == true
-                          ? AppTheme.primaryGreen
-                          : AppTheme.borderSubtle,
-                      width: 2,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        _isHelpful == true
-                            ? Icons.thumb_up
-                            : Icons.thumb_up_alt_outlined,
+                          ? AppTheme.primaryGreenLight
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
                         color: _isHelpful == true
                             ? AppTheme.primaryGreen
-                            : AppTheme.mutedDark,
-                        size: 26,
+                            : AppTheme.borderSubtle,
+                        width: 2,
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '👍 Yes',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _isHelpful == true
+                              ? Icons.thumb_up
+                              : Icons.thumb_up_alt_outlined,
                           color: _isHelpful == true
                               ? AppTheme.primaryGreen
                               : AppTheme.mutedDark,
+                          size: 24,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            '👍 Yes',
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: _isHelpful == true
+                                  ? AppTheme.primaryGreen
+                                  : AppTheme.mutedDark,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
 
               // Thumbs down button (large touch target >= 56px)
-              InkWell(
-                key: const ValueKey('thumbs_down_button'),
-                onTap: _isSubmittingFeedback
-                    ? null
-                    : () => _submitFeedback(diagnosis, false, languageCode, l10n),
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: _isHelpful == false
-                        ? const Color(0xFFFFEBEE)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
+              Expanded(
+                child: InkWell(
+                  key: const ValueKey('thumbs_down_button'),
+                  onTap: _isSubmittingFeedback
+                      ? null
+                      : () => _submitFeedback(diagnosis, false, languageCode, l10n),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
                       color: _isHelpful == false
-                          ? AppTheme.severityHigh
-                          : AppTheme.borderSubtle,
-                      width: 2,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        _isHelpful == false
-                            ? Icons.thumb_down
-                            : Icons.thumb_down_alt_outlined,
+                          ? const Color(0xFFFFEBEE)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
                         color: _isHelpful == false
                             ? AppTheme.severityHigh
-                            : AppTheme.mutedDark,
-                        size: 26,
+                            : AppTheme.borderSubtle,
+                        width: 2,
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '👎 No',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _isHelpful == false
+                              ? Icons.thumb_down
+                              : Icons.thumb_down_alt_outlined,
                           color: _isHelpful == false
                               ? AppTheme.severityHigh
                               : AppTheme.mutedDark,
+                          size: 24,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            '👎 No',
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: _isHelpful == false
+                                  ? AppTheme.severityHigh
+                                  : AppTheme.mutedDark,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -1093,7 +1374,7 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
-  /// Toggles TTS read-aloud of the diagnosis details
+  /// Toggles TTS read-aloud of the diagnosis details (reads spokenSummary first)
   Future<void> _toggleAudioReadout(
     Diagnosis diagnosis,
     String languageCode,
@@ -1101,29 +1382,17 @@ class _ResultScreenState extends State<ResultScreen> {
   ) async {
     if (_ttsService.isSpeaking) {
       await _ttsService.stop();
+      if (mounted) setState(() {});
       return;
     }
 
-    final String severityText = switch (diagnosis.severity) {
-      DiagnosisSeverity.mild => l10n.severityMild,
-      DiagnosisSeverity.moderate => l10n.severityModerate,
-      DiagnosisSeverity.severe => l10n.severitySevere,
-      DiagnosisSeverity.none => '',
-    };
-
-    final result = await _ttsService.speakDiagnosis(
+    final result = await _ttsService.speakSpokenSummary(
       diagnosis: diagnosis,
       languageCode: languageCode,
-      diseaseNameLabel: l10n.diseaseNameLabel,
-      severityLabel: l10n.severityLabel,
-      severityText: severityText,
-      whatToDoLabel: l10n.whatToDoNow,
-      treatmentLabel: l10n.treatmentLabel,
-      organicLabel: l10n.organicTreatment,
-      chemicalLabel: l10n.chemicalTreatment,
     );
 
     if (!mounted) return;
+    setState(() {});
 
     if (result == TtsPlaybackResult.hindiVoiceNotInstalled) {
       _showHindiVoiceHelpDialog(context, l10n);
@@ -1132,6 +1401,7 @@ class _ResultScreenState extends State<ResultScreen> {
 
   /// Displays instructions on how to install Hindi voice data in Android settings
   void _showHindiVoiceHelpDialog(BuildContext context, AppLocalizations l10n) {
+    final isHindi = Localizations.localeOf(context).languageCode == 'hi';
     showDialog(
       context: context,
       builder: (ctx) {
@@ -1165,13 +1435,26 @@ class _ResultScreenState extends State<ResultScreen> {
             ],
           ),
           content: SingleChildScrollView(
-            child: Text(
-              l10n.voiceNotInstalledDesc,
-              style: const TextStyle(
-                fontSize: 15,
-                height: 1.5,
-                color: AppTheme.highContrastDark,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  l10n.voiceNotInstalledDesc,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    height: 1.5,
+                    color: AppTheme.highContrastDark,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  isHindi
+                      ? 'चरण: 1. सेटिंग्स खोलें > 2. भाषा व इनपुट > 3. टेक्स्ट-टू-स्पीच > 4. हिंदी वॉयस डेटा डाउनलोड करें।'
+                      : 'Steps: 1. Open Settings > 2. Languages & Input > 3. Text-to-speech > 4. Download Hindi voice data.',
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.forestGreen),
+                ),
+              ],
             ),
           ),
           actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1204,7 +1487,8 @@ class _ResultScreenState extends State<ResultScreen> {
   }
 
   /// Persistent bottom audio bar visible while TTS is reading aloud
-  Widget _buildAudioPlayingBar(Diagnosis diagnosis, AppLocalizations l10n) {
+  Widget _buildAudioPlayingBar(Diagnosis diagnosis, AppLocalizations l10n, String languageCode) {
+    final isHindi = languageCode == 'hi';
     return Container(
       decoration: const BoxDecoration(
         color: AppTheme.highContrastDark,
@@ -1216,61 +1500,114 @@ class _ResultScreenState extends State<ResultScreen> {
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.record_voice_over,
-            color: AppTheme.severityLow,
-            size: 28,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
               children: [
-                Text(
-                  l10n.readingAloud,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                const Icon(
+                  Icons.record_voice_over,
+                  color: AppTheme.severityLow,
+                  size: 26,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _ttsService.isPaused
+                            ? (isHindi ? 'आवाज़ रुकी हुई है' : 'Audio paused')
+                            : l10n.readingAloud,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13.5,
+                        ),
+                      ),
+                      Text(
+                        diagnosis.diseaseName.isNotEmpty ? diagnosis.diseaseName : (isHindi ? 'स्वस्थ पौधा' : 'Healthy Plant'),
+                        style: const TextStyle(
+                          color: AppTheme.borderSubtle,
+                          fontSize: 12,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ),
-                Text(
-                  diagnosis.diseaseName,
-                  style: const TextStyle(
-                    color: AppTheme.borderSubtle,
-                    fontSize: 12,
+                // Play / Pause toggle
+                IconButton(
+                  icon: Icon(
+                    _ttsService.isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+                    color: Colors.white,
+                    size: 26,
+                  ),
+                  onPressed: () {
+                    if (_ttsService.isPaused) {
+                      _ttsService.resume();
+                    } else {
+                      _ttsService.pause();
+                    }
+                    setState(() {});
+                  },
+                ),
+                // Stop button
+                TextButton.icon(
+                  key: const ValueKey('stop_audio_button'),
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.red.shade700,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: () {
+                    _ttsService.stop();
+                    setState(() {});
+                  },
+                  icon: const Icon(Icons.stop, size: 18, color: Colors.white),
+                  label: Text(
+                    l10n.stopAudio,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13.5,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
-          const SizedBox(width: 12),
-          TextButton.icon(
-            key: const ValueKey('stop_audio_button'),
-            style: TextButton.styleFrom(
-              backgroundColor: Colors.red.shade700,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+            const SizedBox(height: 6),
+            // "Read full details" button
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.amberAccent,
+                  side: const BorderSide(color: Colors.amberAccent),
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                icon: const Icon(Icons.menu_book_rounded, size: 16),
+                label: Text(
+                  isHindi ? 'पूरा विवरण क्रम से सुनें' : 'Read full details section by section',
+                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+                ),
+                onPressed: () {
+                  _ttsService.speakFullDetails(diagnosis: diagnosis, languageCode: languageCode);
+                  setState(() {});
+                },
               ),
             ),
-            onPressed: () => _ttsService.stop(),
-            icon: const Icon(Icons.stop, size: 20, color: Colors.white),
-            label: Text(
-              l10n.stopAudio,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

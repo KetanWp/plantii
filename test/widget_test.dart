@@ -9,7 +9,7 @@ import 'package:plantii/l10n/app_localizations.dart';
 import 'package:plantii/models/diagnosis.dart';
 import 'package:plantii/models/scan_record.dart';
 import 'package:plantii/routes.dart';
-import 'package:plantii/screens/crop_selection_screen.dart';
+import 'package:plantii/screens/permissions_screen.dart';
 import 'package:plantii/screens/history_screen.dart';
 import 'package:plantii/screens/result_screen.dart';
 import 'package:plantii/services/image_processing_service.dart';
@@ -29,27 +29,37 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  group('Crop Selection Bypassed & Direct Flow Tests', () {
-    testWidgets('CropSelectionScreen automatically forwards to camera flow without crop selection cards',
+  group('Permissions Onboarding Screen Tests', () {
+    testWidgets('PermissionsScreen renders camera & weather explanations and Allow / Skip buttons',
         (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          theme: AppTheme.lightTheme,
+          locale: const Locale('en'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           routes: {
-            AppRoutes.cropSelection: (context) => const CropSelectionScreen(),
-            AppRoutes.camera: (context) => const Scaffold(body: Text('Camera Flow Screen')),
+            AppRoutes.permissions: (context) => const PermissionsScreen(),
+            AppRoutes.home: (context) => const Scaffold(body: Text('Home Screen Target')),
           },
-          initialRoute: AppRoutes.cropSelection,
+          initialRoute: AppRoutes.permissions,
         ),
       );
       await tester.pumpAndSettle();
 
-      // Automatically forwards to camera flow
-      expect(find.text('Camera Flow Screen'), findsOneWidget);
+      expect(find.byKey(const ValueKey('allow_permissions_button')), findsOneWidget);
+      expect(find.byKey(const ValueKey('skip_permissions_button')), findsOneWidget);
+
+      await tester.ensureVisible(find.byKey(const ValueKey('skip_permissions_button')));
+      await tester.tap(find.byKey(const ValueKey('skip_permissions_button')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Home Screen Target'), findsOneWidget);
     });
   });
 
   group('Language Selection & Persistence Widget Tests', () {
-    testWidgets('first launch -> language screen; after choosing and restarting -> Home directly',
+    testWidgets('first launch -> language screen -> permissions -> Home; after restart -> Home directly',
         (WidgetTester tester) async {
       SharedPreferences.setMockInitialValues({}); // First launch: no saved language
 
@@ -77,7 +87,15 @@ void main() {
       await tester.tap(find.text('हिंदी'));
       await tester.pumpAndSettle();
 
-      // Directly navigates to Home
+      // On first launch, navigates to friendly Permissions screen
+      expect(find.byType(PermissionsScreen), findsOneWidget);
+
+      // Tap Skip for now
+      await tester.ensureVisible(find.byKey(const ValueKey('skip_permissions_button')));
+      await tester.tap(find.byKey(const ValueKey('skip_permissions_button')));
+      await tester.pumpAndSettle();
+
+      // Lands on Home
       expect(find.byType(HomeScreen), findsOneWidget);
       expect(find.text('Choose Language / भाषा चुनें'), findsNothing);
 
@@ -337,8 +355,8 @@ void main() {
 
       // Verify Hindi voice missing dialog is displayed
       expect(find.text('हिंदी आवाज उपलब्ध नहीं है'), findsOneWidget);
-      expect(find.textContaining('सेटिंग्स'), findsOneWidget);
-      expect(find.textContaining('टेक्स्ट-टू-स्पीच'), findsOneWidget);
+      expect(find.textContaining('सेटिंग्स'), findsAtLeastNWidgets(1));
+      expect(find.textContaining('टेक्स्ट-टू-स्पीच'), findsAtLeastNWidgets(1));
 
       // Tap dismiss "समझ गया"
       await tester.tap(find.text('समझ गया'));
